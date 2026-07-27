@@ -11,9 +11,9 @@
 *{box-sizing:border-box}
 body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
 .wrap{max-width:480px;margin:0 auto;background:#fff;min-height:100vh}
-.hd{background:linear-gradient(135deg,var(--wa),var(--wa2));color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:1000}
-.hd .av{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
-.hd h1{margin:0;font-size:16px}.hd p{margin:1px 0 0;font-size:12px;opacity:.9}
+.head{background:linear-gradient(135deg,var(--wa),var(--wa2));color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:1000}
+.head .av{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+.head h1{margin:0;font-size:16px}.head p{margin:1px 0 0;font-size:12px;opacity:.9}
 .body{padding:16px 18px 40px}
 .pre{background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:12px;padding:12px 14px;font-size:12.5px;margin-bottom:18px}
 .pre ul{margin:6px 0 0;padding-left:18px}
@@ -22,21 +22,22 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 .req{color:#e11}
 .fld input,.fld select,.fld textarea{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink)}
 .fld textarea{min-height:64px;resize:vertical}
-.err{border-color:#e11 !important}
+.invalid{border-color:#e11 !important}
 .hint{font-size:11.5px;color:var(--sub);margin-top:4px}
-#map{height:200px;border-radius:12px;border:1px solid var(--line);margin-top:6px}
-.geo{margin-top:8px;font-size:13px;color:var(--wa2);background:none;border:1px solid var(--wa2);border-radius:9px;padding:8px 12px;cursor:pointer;width:100%;font-weight:600}
-.coords{font-size:11.5px;color:var(--sub);margin-top:6px;text-align:center}
+.err{color:#e11;font-size:12px;margin-top:4px;display:none}
+.mapbtn{width:100%;background:#fff;border:1px solid var(--wa2);color:var(--wa2);border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer}
+.coords{font-size:11.5px;color:var(--sub);margin-top:6px}
 .btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;margin-top:10px;cursor:pointer}
 .btn:disabled{opacity:.5}
 .foot{font-size:11px;color:var(--sub);text-align:center;margin-top:14px}
-.errmsg{color:#e11;font-size:12.5px;margin-top:8px;display:none}
+.hidden{display:none}
+#ok{display:none;text-align:center;padding:50px 20px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="hd"><div class="av">🧪</div><div><h1>Servicio a Domicilio</h1><p>INTERLAB · Toma de muestra en casa</p></div></div>
-  <div class="body">
+  <div class="head"><div class="av">🧪</div><div><h1>Servicio a Domicilio</h1><p>INTERLAB · Toma de muestra en casa</p></div></div>
+  <div class="body" id="scr_datos">
     <div class="pre">
       Antes de enviar, tenga en cuenta:
       <ul>
@@ -45,98 +46,132 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
         <li>El pago se realiza al momento de la toma. <b>No aplican ODA/COPAGOS</b> de seguros.</li>
       </ul>
     </div>
+    <div class="fld"><label>Nombres y apellidos del paciente <span class="req">*</span></label><input id="nombre" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombre">Ingrese el nombre.</div></div>
+    <div class="fld"><label>Cédula o pasaporte <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Ej.: 0912345678"><div class="err" id="e_cedula">Ingrese la cédula o pasaporte.</div></div>
+    <div class="fld"><label>Ciudad <span class="req">*</span></label>
+      <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Milagro</option><option>Quevedo</option></select>
+      <div class="err" id="e_ciudad">Seleccione la ciudad.</div></div>
+    <div class="fld"><label>Dirección y referencia para la toma <span class="req">*</span></label>
+      <textarea id="direccion" placeholder="Calle principal, número y una referencia (ej.: casa esquinera portón blanco)"></textarea>
+      <button type="button" class="mapbtn" id="efBtnMapa" style="margin-top:8px">📍 Seleccionar en el mapa</button>
+      <div class="coords" id="coords">Use el mapa para ubicar el punto exacto de la toma.</div>
+      <div class="err" id="e_direccion">Ingrese la dirección.</div>
+      <input type="hidden" id="ef_lat"><input type="hidden" id="ef_lon"></div>
+    <div class="fld"><label>Teléfono de contacto <span class="req">*</span></label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"><div class="err" id="e_telefono">Ingrese el teléfono.</div></div>
+    <div class="fld"><label>Exámenes que necesita <span class="req">*</span></label>
+      <textarea id="examenes" placeholder="Listado de pruebas (ej.: biometría, glucosa, perfil lipídico)"></textarea>
+      <div class="hint">Si tiene la orden médica, podrá enviar la foto al asesor en el chat.</div>
+      <div class="err" id="e_examenes">Indique los exámenes.</div></div>
+    <div class="fld"><label>Forma de pago <span class="req">*</span></label>
+      <select id="pago"><option value="">Seleccione…</option><option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otra</option></select>
+      <div class="err" id="e_pago">Seleccione la forma de pago.</div></div>
+    <div class="fld"><label>Fecha aproximada del servicio <span class="req">*</span></label><input id="fecha" type="date"><div class="err" id="e_fecha">Seleccione la fecha.</div></div>
+    <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios y marque su ubicación.</div>
+    <button class="btn" id="btn" type="button">Enviar y continuar con un asesor →</button>
+    <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que confirmará la cobertura y coordinará la visita.</div>
+  </div>
+  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Solicitud enviada!</h2><p style="color:#6b6b6b">Le estamos conectando con un asesor. Vuelva a la conversación de WhatsApp.</p></div>
+</div>
 
-    <form id="f">
-      <div class="fld"><label>Nombres y apellidos del paciente <span class="req">*</span></label><input id="nombre" required placeholder="Ej.: Juan Carlos Pérez"></div>
-      <div class="fld"><label>Cédula o pasaporte <span class="req">*</span></label><input id="cedula" required inputmode="numeric" placeholder="Ej.: 0912345678"></div>
-      <div class="fld"><label>Ciudad <span class="req">*</span></label>
-        <select id="ciudad" required><option value="">Seleccione…</option>
-          <option>Guayaquil</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option>
-          <option>Manta</option><option>Machala</option><option>Milagro</option><option>Quevedo</option></select></div>
-      <div class="fld"><label>Dirección y referencia para la toma <span class="req">*</span></label>
-        <textarea id="direccion" required placeholder="Calle principal, número y una referencia (ej.: casa esquinera portón blanco)"></textarea></div>
-
-      <div class="fld">
-        <label>📍 Marque su ubicación en el mapa <span class="req">*</span></label>
-        <div id="map"></div>
-        <button type="button" class="geo" id="btnGeo">📍 Usar mi ubicación actual</button>
-        <div class="coords" id="coords">Arrastre el pin a la ubicación exacta de la toma.</div>
-      </div>
-
-      <div class="fld"><label>Teléfono de contacto <span class="req">*</span></label><input id="telefono" required inputmode="tel" placeholder="Ej.: 0999123456"></div>
-      <div class="fld"><label>Exámenes que necesita <span class="req">*</span></label>
-        <textarea id="examenes" required placeholder="Escriba el listado de pruebas (ej.: biometría, glucosa, perfil lipídico)"></textarea>
-        <div class="hint">Si tiene la orden médica, podrá enviar la foto al asesor en el chat.</div></div>
-      <div class="fld"><label>Forma de pago <span class="req">*</span></label>
-        <select id="pago" required><option value="">Seleccione…</option>
-          <option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otra</option></select></div>
-      <div class="fld"><label>Fecha aproximada en que requiere el servicio <span class="req">*</span></label><input id="fecha" type="date" required></div>
-
-      <div class="errmsg" id="errmsg">Por favor complete todos los campos obligatorios y marque su ubicación en el mapa.</div>
-      <button class="btn" id="btnEnviar" type="submit">Enviar y continuar con un asesor →</button>
-      <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que confirmará la cobertura y coordinará la visita.</div>
-    </form>
+<!-- Modal de mapa (base EnvíaFácil: Google geocode + buscador) -->
+<div id="efMapModal" class="hidden" style="position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:.5px solid #e4e4e4">
+    <span style="font-size:16px;font-weight:600">Seleccionar ubicación</span>
+    <span id="efMapClose" style="font-size:24px;color:#8a8a8a;cursor:pointer;line-height:1">&times;</span>
+  </div>
+  <div style="position:relative;flex:1;min-height:200px">
+    <div id="efLeaf" style="position:absolute;inset:0"></div>
+    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);pointer-events:none;font-size:38px;z-index:500">📍</div>
+    <button type="button" id="efMiUbic" style="position:absolute;right:14px;bottom:20px;width:46px;height:46px;border-radius:50%;background:#fff;border:.5px solid #ddd;font-size:20px;z-index:500;cursor:pointer">🎯</button>
+    <div style="position:absolute;top:10px;left:10px;right:10px;z-index:600">
+      <input id="efSearch" type="text" autocomplete="off" placeholder="Busca ciudad, calle o referencia" style="width:100%;height:42px;border-radius:10px;border:none;padding:0 12px;font-size:14px;box-shadow:0 1px 6px rgba(0,0,0,.25);box-sizing:border-box"/>
+      <div id="efSug" style="background:#fff;border-radius:10px;margin-top:4px;box-shadow:0 2px 8px rgba(0,0,0,.2);overflow:hidden;display:none;max-height:220px;overflow-y:auto"></div>
+    </div>
+  </div>
+  <div style="padding:14px 16px;border-top:.5px solid #e4e4e4">
+    <div id="efCov" style="font-size:12px;margin-bottom:6px;color:#888">Mueve el mapa para ubicar el pin</div>
+    <div id="efAddr" style="font-size:14px;font-weight:600;margin-bottom:12px;min-height:20px;color:#0f0f0f"></div>
+    <button type="button" id="efMapConfirm" style="width:100%;height:48px;border-radius:24px;background:var(--wa);border:none;color:#fff;font-weight:700;font-size:15px;cursor:pointer">Confirmar ubicación</button>
   </div>
 </div>
 
+<script>
+(function(){
+  var qs=new URLSearchParams(location.search);
+  var DEFAULT_CALLBACK="https://internova-callback.fn.jelou.ai";
+  var executionId=qs.get("executionId")||"";
+  var callback=qs.get("callback")||DEFAULT_CALLBACK;
+  if(!executionId){var m=location.href.match(/[?&]executionId=([^&#]+)/);if(m)executionId=decodeURIComponent(m[1]);}
+  if(callback.indexOf("executionId=")>=0){var cm=callback.match(/^(.*?)[?&]executionId=([^&#]+)(.*)$/);if(cm){if(!executionId)executionId=decodeURIComponent(cm[2]);callback=cm[1];}}
+  var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
+  // ---- Bloqueo / solo-lectura (una vez enviado no se puede reenviar/editar) ----
+  var LK=(qs.get("n")||"");var LOCK=(executionId&&LK)?("iv_"+executionId+"_"+LK):"";
+  function locked(){if(!LOCK)return null;try{return localStorage.getItem(LOCK);}catch(e){return null;}}
+  function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(d||{}));}catch(e){}}
+  function showLocked(){var d={};try{d=JSON.parse(locked())||{};}catch(e){}var SKIP={executionId:1,success:1,lat:1,lon:1,maps:1};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",direccion:"Dirección",telefono:"Teléfono",examenes:"Exámenes",pago:"Forma de pago",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}if(d.maps)rows+='<div style="padding:9px 0"><a href="'+d.maps+'" target="_blank" style="color:#128c7e">📍 Ver ubicación en el mapa</a></div>';document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  if(locked()){showLocked();return;}
+
+  function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
+  function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
+  function payloadDatos(){
+    var la=val("ef_lat"),lo=val("ef_lon");
+    return {paciente:val("nombre"),cedula:val("cedula"),ciudad:val("ciudad"),direccion:val("direccion"),
+      telefono:val("telefono"),examenes:val("examenes"),pago:val("pago"),fecha:val("fecha"),
+      lat:la,lon:lo,maps:(la&&lo)?("https://maps.google.com/?q="+la+","+lo):""};
+  }
+  function validate(){
+    var ok=true;
+    [["nombre",function(v){return v.length>=3;}],["cedula",function(v){return v.length>=5;}],
+     ["ciudad",function(v){return !!v;}],["direccion",function(v){return v.length>=4;}],
+     ["telefono",function(v){return v.replace(/\D/g,"").length>=7;}],["examenes",function(v){return v.length>=2;}],
+     ["pago",function(v){return !!v;}],["fecha",function(v){return !!v;}]
+    ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
+    return ok;
+  }
+  var btn=document.getElementById("btn");
+  btn.addEventListener("click",async function(){
+    document.getElementById("e_global").style.display="none";
+    if(!validate()){document.getElementById("e_global").style.display="block";window.scrollTo(0,0);return;}
+    btn.disabled=true;btn.textContent="Enviando…";
+    var body=Object.assign({executionId:executionId,success:true},payloadDatos());
+    try{
+      var resp=await fetch(callback,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      var out={};try{out=await resp.json();}catch(e){}
+      if(!resp.ok||out.ok===false)throw new Error("callback "+(out.status||resp.status));
+      lock(payloadDatos());
+      document.getElementById("scr_datos").classList.add("hidden");
+      document.getElementById("ok").style.display="block";
+      if(WA)setTimeout(function(){window.location.href="https://wa.me/"+WA;},1000);
+    }catch(e){
+      btn.disabled=false;btn.textContent="Enviar y continuar con un asesor →";
+      var g=document.getElementById("e_global");g.textContent="No pudimos enviar. Revise su conexión e intente de nuevo.";g.style.display="block";
+    }
+  });
+})();
+</script>
+
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-// ==== CONFIG ====
-var BOT_WA   = (location.href.match(/[?&]wa=([^&]+)/)||[])[1] || "593995464059";       // auto-cierre → chat del bot
-var EXEC     = (location.href.match(/[?&]executionId=([^&]+)/)||[])[1] || "";           // lo agrega Jelou al abrir el WebView
-var CALLBACK = "https://internova-callback.fn.jelou.ai";                                 // proxy CORS → callback de Jelou
-// ================
-var center=[-2.1710,-79.9224]; // Guayaquil
-var map=L.map('map').setView(center,13);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-var marker=L.marker(center,{draggable:true}).addTo(map);
-var lat=null, lon=null;
-function setC(la,lo){lat=+la.toFixed(6);lon=+lo.toFixed(6);document.getElementById('coords').textContent='Ubicación: '+lat+', '+lon;}
-// Geocodificación inversa (OSM/Nominatim): el pin autocompleta dirección y ciudad
-function geo(la,lo){
-  fetch("https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&accept-language=es&lat="+la+"&lon="+lo)
-   .then(function(r){return r.json();}).then(function(j){
-     var a=(j&&j.address)||{};
-     var calle=[a.road,a.house_number].filter(Boolean).join(" ");
-     var sector=a.suburb||a.neighbourhood||a.quarter||a.residential||"";
-     var dir=[calle,sector].filter(Boolean).join(", ");
-     if(dir) document.getElementById('direccion').value=dir;
-     var city=a.city||a.town||a.village||a.county||"";
-     if(city){var sel=document.getElementById('ciudad');for(var i=0;i<sel.options.length;i++){var v=sel.options[i].value.toLowerCase();if(v&&(city.toLowerCase().indexOf(v)>=0||v.indexOf(city.toLowerCase())>=0)){sel.selectedIndex=i;break;}}}
-   }).catch(function(){});
-}
-marker.on('dragend',function(e){var p=e.target.getLatLng();setC(p.lat,p.lng);geo(p.lat,p.lng);});
-map.on('click',function(e){marker.setLatLng(e.latlng);setC(e.latlng.lat,e.latlng.lng);geo(e.latlng.lat,e.latlng.lng);});
-document.getElementById('btnGeo').onclick=function(){
-  if(!navigator.geolocation){alert('Su dispositivo no permite ubicación automática. Arrastre el pin manualmente.');return;}
-  navigator.geolocation.getCurrentPosition(function(pos){
-    var la=pos.coords.latitude, lo=pos.coords.longitude;
-    map.setView([la,lo],16);marker.setLatLng([la,lo]);setC(la,lo);geo(la,lo);
-  },function(){alert('No se pudo obtener la ubicación. Arrastre el pin manualmente.');});
-};
-setTimeout(function(){map.invalidateSize();},300);
-
-document.getElementById('f').addEventListener('submit',function(ev){
-  ev.preventDefault();
-  var ids=['nombre','cedula','ciudad','direccion','telefono','examenes','pago','fecha'];
-  var ok=true;
-  ids.forEach(function(id){var el=document.getElementById(id);if(!el.value.trim()){el.classList.add('err');ok=false;}else{el.classList.remove('err');}});
-  if(lat===null||lon===null){ok=false;document.getElementById('map').style.border='1px solid #e11';}
-  if(!ok){document.getElementById('errmsg').style.display='block';window.scrollTo(0,0);return;}
-  var g=function(id){return document.getElementById(id).value.trim();};
-  var btn=document.getElementById('btnEnviar'); btn.disabled=true; btn.textContent='Enviando…';
-  var data={
-    executionId:EXEC,
-    paciente:g('nombre'), cedula:g('cedula'), ciudad:g('ciudad'), direccion:g('direccion'),
-    telefono:g('telefono'), examenes:g('examenes'), pago:g('pago'), fecha:g('fecha'),
-    lat:lat, lon:lon, maps:"https://maps.google.com/?q="+lat+","+lon
-  };
-  fetch(CALLBACK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})
-   .then(function(r){return r.json();})
-   .then(function(){ window.location.href="https://wa.me/"+BOT_WA; })
-   .catch(function(){ btn.disabled=false; btn.textContent='Enviar y continuar con un asesor →';
-     var em=document.getElementById('errmsg'); em.textContent='No pudimos enviar. Revise su conexión e intente de nuevo.'; em.style.display='block'; });
-});
+(function(){
+  var modal=document.getElementById('efMapModal'),map=null,geoT=null,srchT=null;
+  var FN='https://enviafacil-geocode.fn.jelou.ai';
+  var DEF=[-2.1710,-79.9224]; // Guayaquil
+  function sess(){return 'iv-'+Date.now()+'-'+Math.floor(Math.random()*1e6);}
+  var SESS=sess();
+  function setC(la,lo){document.getElementById('ef_lat').value=(+la).toFixed(6);document.getElementById('ef_lon').value=(+lo).toFixed(6);document.getElementById('coords').textContent='Ubicación: '+(+la).toFixed(6)+', '+(+lo).toFixed(6);}
+  document.getElementById('efBtnMapa').onclick=openM;
+  document.getElementById('efMapClose').onclick=closeM;
+  document.getElementById('efMiUbic').onclick=function(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(function(p){if(map)map.setView([p.coords.latitude,p.coords.longitude],16);},function(){},{timeout:6000,enableHighAccuracy:true});};
+  document.getElementById('efMapConfirm').onclick=confirmLoc;
+  document.getElementById('efSearch').addEventListener('input',function(){var q=this.value.trim();clearTimeout(srchT);if(q.length<3){document.getElementById('efSug').style.display='none';return;}srchT=setTimeout(function(){doSearch(q);},320);});
+  function openM(){modal.classList.remove('hidden');if(!map){map=L.map('efLeaf',{zoomControl:true}).setView(DEF,15);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);map.on('moveend',onMove);if(navigator.geolocation)navigator.geolocation.getCurrentPosition(function(p){map.setView([p.coords.latitude,p.coords.longitude],16);},function(){},{timeout:6000});}setTimeout(function(){map.invalidateSize();onMove();},250);}
+  function closeM(){modal.classList.add('hidden');}
+  function onMove(){var sg=document.getElementById('efSug');if(sg)sg.style.display='none';var c=map.getCenter();document.getElementById('efAddr').textContent='Ubicando…';document.getElementById('efCov').textContent='';clearTimeout(geoT);geoT=setTimeout(function(){revGeo(c.lat,c.lng);},450);}
+  function revGeo(lat,lon){fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lat:lat,lon:lon})}).then(function(r){return r.json();}).then(function(d){var a=document.getElementById('efAddr'),cov=document.getElementById('efCov');if(d&&d.ok){window._geo={lat:lat,lon:lon,calle:d.calle||'',sector:d.sector||'',ciudad:d.ciudad||'',fmt:d.formatted||''};a.textContent=d.formatted||((d.calle||'')+', '+(d.ciudad||''));cov.textContent=d.ciudad?('✅ '+d.ciudad+', '+(d.provincia||'')):'';cov.style.color='#0f6e56';}else{a.textContent='No pudimos leer la dirección aquí';window._geo=null;}}).catch(function(){document.getElementById('efAddr').textContent='Sin conexión al ubicar';});}
+  function confirmLoc(){if(!map){closeM();return;}var c=map.getCenter(),b=document.getElementById('efMapConfirm');b.textContent='Confirmando…';b.disabled=true;fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lat:c.lat,lon:c.lng})}).then(function(r){return r.json();}).then(function(d){setC(c.lat,c.lng);if(d&&d.ok){var dir=[d.calle,d.sector].filter(Boolean).join(", ");if(!dir&&d.formatted)dir=String(d.formatted).split(',').slice(0,2).join(',');if(dir)document.getElementById('direccion').value=dir;if(d.ciudad){var sel=document.getElementById('ciudad');for(var i=0;i<sel.options.length;i++){var v=sel.options[i].value.toLowerCase();if(v&&(d.ciudad.toLowerCase().indexOf(v)>=0||v.indexOf(d.ciudad.toLowerCase())>=0)){sel.selectedIndex=i;break;}}}}b.textContent='Confirmar ubicación';b.disabled=false;closeM();}).catch(function(){setC(c.lat,c.lng);b.textContent='Confirmar ubicación';b.disabled=false;closeM();});}
+  function doSearch(q){var bias=map?(map.getCenter().lat+','+map.getCenter().lng):'';fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:q,session:SESS,bias:bias})}).then(function(r){return r.json();}).then(function(d){var sug=document.getElementById('efSug');if(!d.ok||!d.predictions||!d.predictions.length){sug.style.display='none';return;}sug.innerHTML='';d.predictions.forEach(function(p){var row=document.createElement('div');row.style.cssText='padding:10px 12px;border-bottom:.5px solid #eee;cursor:pointer';row.innerHTML='<div style="font-weight:600;font-size:13px">'+(p.main||p.description)+'</div>'+(p.sec?'<div style="color:#888;font-size:12px">'+p.sec+'</div>':'');row.onclick=function(){pickPlace(p.place_id,p.description);};sug.appendChild(row);});sug.style.display='block';}).catch(function(){});}
+  function pickPlace(pid,desc){document.getElementById('efSug').style.display='none';document.getElementById('efSearch').value=desc||'';fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place_id:pid,session:SESS})}).then(function(r){return r.json();}).then(function(d){if(d&&d.ok&&d.lat&&d.lon){map.setView([d.lat,d.lon],17);}SESS=sess();}).catch(function(){});}
+})();
 </script>
 </body>
 </html>
