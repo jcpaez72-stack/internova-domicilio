@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>INTERLAB · Cotización de Exámenes</title>
+<style>
+:root{--wa:#075e54;--wa2:#128c7e;--ink:#111b21;--sub:#667781;--line:#d1d7db;--field:#fff;--bg:#f0f2f5;
+ --amber:#8a5a00;--amberbg:#fff8e6;--amberbd:#ffe08a}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+.wrap{max-width:480px;margin:0 auto;background:#fff;min-height:100vh}
+.head{background:linear-gradient(135deg,var(--wa),var(--wa2));color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:1000}
+.head .av{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+.head h1{margin:0;font-size:16px}.head p{margin:1px 0 0;font-size:12px;opacity:.9}
+.body{padding:16px 18px 40px}
+.pre{background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:12px;padding:12px 14px;font-size:12.5px;margin-bottom:18px}
+.fld{margin-bottom:15px}
+.fld label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.req{color:#e11}
+.fld input,.fld select,.fld textarea{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink)}
+.fld textarea{min-height:70px;resize:vertical}
+.invalid{border-color:#e11 !important}
+.hint{font-size:11.5px;color:var(--sub);margin-top:4px}
+.err{color:#e11;font-size:12px;margin-top:4px;display:none}
+.btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;margin-top:10px;cursor:pointer}
+.btn:disabled{opacity:.5}
+.foot{font-size:11px;color:var(--sub);text-align:center;margin-top:14px}
+.hidden{display:none !important}
+#ok{display:none;text-align:center;padding:50px 20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><div class="av">🧪</div><div><h1>Cotización de Exámenes</h1><p>INTERLAB · Laboratorio Clínico</p></div></div>
+  <div class="body" id="scr_datos">
+    <div class="pre">
+      Complete sus datos y el listado de exámenes. Un asesor validará la <b>tarifa correspondiente</b> (particular, convenio o seguro) y le enviará la cotización.
+    </div>
+    <div class="fld"><label>Nombres y apellidos <span class="req">*</span></label><input id="nombres" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombres">Ingrese el nombre.</div></div>
+    <div class="fld"><label>Cédula o pasaporte <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Ej.: 0912345678"><div class="err" id="e_cedula">Ingrese la cédula o pasaporte.</div></div>
+    <div class="fld"><label>RUC de la empresa</label><input id="ruc" inputmode="numeric" placeholder="Ej.: 0912345678001"><div class="hint">Solo si es una clínica o laboratorio remitente con convenio.</div></div>
+    <div class="fld"><label>Seguro médico</label><input id="seguro" placeholder="Ej.: Salud S.A., BMI… (deje vacío si no aplica)"><div class="hint">Indíquelo solo si desea cotizar con su seguro médico privado.</div></div>
+    <div class="fld"><label>Exámenes a cotizar <span class="req">*</span></label>
+      <textarea id="examenes" placeholder="Listado de pruebas (ej.: biometría, glucosa, perfil lipídico)"></textarea>
+      <div class="hint">Comparta la lista. También puede enviar la foto de la orden al asesor en el chat.</div>
+      <div class="err" id="e_examenes">Indique los exámenes.</div></div>
+    <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
+    <button class="btn" id="btn" type="button">Enviar y continuar con un asesor →</button>
+    <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que validará la tarifa y le entregará la cotización.</div>
+  </div>
+  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Solicitud enviada!</h2><p style="color:#6b6b6b">Le estamos conectando con un asesor. Vuelva a la conversación de WhatsApp.</p></div>
+</div>
+
+<script>
+(function(){
+  var qs=new URLSearchParams(location.search);
+  var DEFAULT_CALLBACK="https://internova-callback.fn.jelou.ai";
+  var executionId=qs.get("executionId")||"";
+  var callback=qs.get("callback")||DEFAULT_CALLBACK;
+  if(!executionId){var m=location.href.match(/[?&]executionId=([^&#]+)/);if(m)executionId=decodeURIComponent(m[1]);}
+  if(callback.indexOf("executionId=")>=0){var cm=callback.match(/^(.*?)[?&]executionId=([^&#]+)(.*)$/);if(cm){if(!executionId)executionId=decodeURIComponent(cm[2]);callback=cm[1];}}
+  var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
+  // ---- Bloqueo / solo-lectura: una vez enviado, TODA reapertura sale solo-lectura ----
+  // Anclado al número del cliente ({{$user.id}} = param "u") para que funcione en el bot Y en el
+  // chat del asesor. Una solicitud NUEVA (executionId distinto) vuelve a quedar editable.
+  var LK=(qs.get("n")||"");
+  var U=(qs.get("u")||qs.get("celular")||"").replace(/\D/g,"");
+  var LOCK=LK?("iv_"+LK+"_"+(U||(executionId?("e_"+executionId):""))):"";
+  if(LK&&!U&&!executionId)LOCK="";
+  function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
+  function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
+  function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={nombres:"Nombres",cedula:"Cédula/Pasaporte",ruc:"RUC",seguro:"Seguro médico",examenes:"Exámenes"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  if(isLocked()){showLocked();return;}
+
+  function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
+  function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
+  function payloadDatos(){
+    return {nombres:val("nombres"),cedula:val("cedula"),ruc:val("ruc"),seguro:val("seguro"),examenes:val("examenes")};
+  }
+  function validate(){
+    var ok=true;
+    [["nombres",function(v){return v.length>=3;}],["cedula",function(v){return v.length>=5;}],
+     ["examenes",function(v){return v.length>=2;}]
+    ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
+    return ok;
+  }
+  var btn=document.getElementById("btn");
+  btn.addEventListener("click",async function(){
+    document.getElementById("e_global").style.display="none";
+    if(!validate()){document.getElementById("e_global").style.display="block";window.scrollTo(0,0);return;}
+    btn.disabled=true;btn.textContent="Enviando…";
+    var body=Object.assign({executionId:executionId,success:true},payloadDatos());
+    try{
+      var resp=await fetch(callback,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      var out={};try{out=await resp.json();}catch(e){}
+      if(!resp.ok||out.ok===false)throw new Error("callback "+(out.status||resp.status));
+      lock(payloadDatos());
+      document.getElementById("scr_datos").classList.add("hidden");
+      document.getElementById("ok").style.display="block";
+      if(WA)setTimeout(function(){window.location.href="https://wa.me/"+WA;},1000);
+    }catch(e){
+      btn.disabled=false;btn.textContent="Enviar y continuar con un asesor →";
+      var g=document.getElementById("e_global");g.textContent="No pudimos enviar. Revise su conexión e intente de nuevo.";g.style.display="block";
+    }
+  });
+})();
+</script>
+</body>
+</html>
