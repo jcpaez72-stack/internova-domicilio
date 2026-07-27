@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>INTERLAB · Servicio a Domicilio</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{--wa:#075e54;--wa2:#128c7e;--ink:#111b21;--sub:#667781;--line:#d1d7db;--field:#fff;--bg:#f0f2f5;
  --amber:#8a5a00;--amberbg:#fff8e6;--amberbd:#ffe08a}
@@ -150,27 +151,100 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 })();
 </script>
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (function(){
   var modal=document.getElementById('efMapModal'),map=null,geoT=null,srchT=null;
   var FN='https://enviafacil-geocode.fn.jelou.ai';
-  var DEF=[-2.1710,-79.9224]; // Guayaquil
-  function sess(){return 'iv-'+Date.now()+'-'+Math.floor(Math.random()*1e6);}
-  var SESS=sess();
-  function setC(la,lo){document.getElementById('ef_lat').value=(+la).toFixed(6);document.getElementById('ef_lon').value=(+lo).toFixed(6);document.getElementById('coords').textContent='Ubicación: '+(+la).toFixed(6)+', '+(+lo).toFixed(6);}
-  document.getElementById('efBtnMapa').onclick=openM;
-  document.getElementById('efMapClose').onclick=closeM;
-  document.getElementById('efMiUbic').onclick=function(){if(!navigator.geolocation)return;navigator.geolocation.getCurrentPosition(function(p){if(map)map.setView([p.coords.latitude,p.coords.longitude],16);},function(){},{timeout:6000,enableHighAccuracy:true});};
-  document.getElementById('efMapConfirm').onclick=confirmLoc;
-  document.getElementById('efSearch').addEventListener('input',function(){var q=this.value.trim();clearTimeout(srchT);if(q.length<3){document.getElementById('efSug').style.display='none';return;}srchT=setTimeout(function(){doSearch(q);},320);});
-  function openM(){modal.classList.remove('hidden');if(!map){map=L.map('efLeaf',{zoomControl:true}).setView(DEF,15);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);map.on('moveend',onMove);if(navigator.geolocation)navigator.geolocation.getCurrentPosition(function(p){map.setView([p.coords.latitude,p.coords.longitude],16);},function(){},{timeout:6000});}setTimeout(function(){map.invalidateSize();onMove();},250);}
+  var DEF=[-2.170998,-79.922359]; // Guayaquil (la geolocalización lo recentra)
+  function newSess(){return 'iv-'+Date.now()+'-'+Math.floor(Math.random()*1e6);}
+  var sess=newSess();
+  function setV(id,v){var el=document.getElementById(id);if(el&&v)el.value=v;}
+  function openM(){
+    modal.classList.remove('hidden');
+    if(!map){
+      map=L.map('efLeaf',{zoomControl:true}).setView(DEF,15);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+      map.on('moveend',onMove);
+      tryLoc();
+    }
+    setTimeout(function(){map.invalidateSize();onMove();},250);
+  }
   function closeM(){modal.classList.add('hidden');}
-  function onMove(){var sg=document.getElementById('efSug');if(sg)sg.style.display='none';var c=map.getCenter();document.getElementById('efAddr').textContent='Ubicando…';document.getElementById('efCov').textContent='';clearTimeout(geoT);geoT=setTimeout(function(){revGeo(c.lat,c.lng);},450);}
-  function revGeo(lat,lon){fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lat:lat,lon:lon})}).then(function(r){return r.json();}).then(function(d){var a=document.getElementById('efAddr'),cov=document.getElementById('efCov');if(d&&d.ok){window._geo={lat:lat,lon:lon,calle:d.calle||'',sector:d.sector||'',ciudad:d.ciudad||'',fmt:d.formatted||''};a.textContent=d.formatted||((d.calle||'')+', '+(d.ciudad||''));cov.textContent=d.ciudad?('✅ '+d.ciudad+', '+(d.provincia||'')):'';cov.style.color='#0f6e56';}else{a.textContent='No pudimos leer la dirección aquí';window._geo=null;}}).catch(function(){document.getElementById('efAddr').textContent='Sin conexión al ubicar';});}
-  function confirmLoc(){if(!map){closeM();return;}var c=map.getCenter(),b=document.getElementById('efMapConfirm');b.textContent='Confirmando…';b.disabled=true;fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lat:c.lat,lon:c.lng})}).then(function(r){return r.json();}).then(function(d){setC(c.lat,c.lng);if(d&&d.ok){var dir=[d.calle,d.sector].filter(Boolean).join(", ");if(!dir&&d.formatted)dir=String(d.formatted).split(',').slice(0,2).join(',');if(dir)document.getElementById('direccion').value=dir;if(d.ciudad){var sel=document.getElementById('ciudad');for(var i=0;i<sel.options.length;i++){var v=sel.options[i].value.toLowerCase();if(v&&(d.ciudad.toLowerCase().indexOf(v)>=0||v.indexOf(d.ciudad.toLowerCase())>=0)){sel.selectedIndex=i;break;}}}}b.textContent='Confirmar ubicación';b.disabled=false;closeM();}).catch(function(){setC(c.lat,c.lng);b.textContent='Confirmar ubicación';b.disabled=false;closeM();});}
-  function doSearch(q){var bias=map?(map.getCenter().lat+','+map.getCenter().lng):'';fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:q,session:SESS,bias:bias})}).then(function(r){return r.json();}).then(function(d){var sug=document.getElementById('efSug');if(!d.ok||!d.predictions||!d.predictions.length){sug.style.display='none';return;}sug.innerHTML='';d.predictions.forEach(function(p){var row=document.createElement('div');row.style.cssText='padding:10px 12px;border-bottom:.5px solid #eee;cursor:pointer';row.innerHTML='<div style="font-weight:600;font-size:13px">'+(p.main||p.description)+'</div>'+(p.sec?'<div style="color:#888;font-size:12px">'+p.sec+'</div>':'');row.onclick=function(){pickPlace(p.place_id,p.description);};sug.appendChild(row);});sug.style.display='block';}).catch(function(){});}
-  function pickPlace(pid,desc){document.getElementById('efSug').style.display='none';document.getElementById('efSearch').value=desc||'';fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place_id:pid,session:SESS})}).then(function(r){return r.json();}).then(function(d){if(d&&d.ok&&d.lat&&d.lon){map.setView([d.lat,d.lon],17);}SESS=sess();}).catch(function(){});}
+  function onMove(){
+    var sg=document.getElementById('efSug');if(sg)sg.style.display='none';
+    var c=map.getCenter();
+    document.getElementById('efAddr').textContent='Ubicando…';
+    document.getElementById('efCov').textContent='';
+    clearTimeout(geoT);geoT=setTimeout(function(){revGeo(c.lat,c.lng);},450);
+  }
+  function revGeo(lat,lon){
+    fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lat:lat,lon:lon})})
+    .then(function(r){return r.json();}).then(function(d){
+      var a=document.getElementById('efAddr'),cov=document.getElementById('efCov');
+      if(d&&d.ok){
+        window._geo={lat:lat,lon:lon,calle:d.calle||'',sector:d.sector||'',ciudad:d.ciudad||'',fmt:d.formatted||''};
+        a.textContent=d.formatted||((d.calle||'')+', '+(d.ciudad||''));
+        if(d.ciudad){cov.textContent='✅ '+d.ciudad+(d.provincia?', '+d.provincia:'');cov.style.color='#0f6e56';}
+        else{cov.textContent='';}
+      }else{a.textContent='No pudimos leer la dirección aquí';window._geo=null;}
+    }).catch(function(){document.getElementById('efAddr').textContent='Sin conexión al ubicar';});
+  }
+  function tryLoc(){
+    if(!navigator.geolocation)return;
+    navigator.geolocation.getCurrentPosition(function(p){if(map)map.setView([p.coords.latitude,p.coords.longitude],16);},function(){},{timeout:6000,enableHighAccuracy:true});
+  }
+  function confirmLoc(){
+    if(!map){closeM();return;}
+    var c=map.getCenter(),btn=document.getElementById('efMapConfirm');
+    btn.textContent='Confirmando…';btn.disabled=true;
+    function done(d){
+      setV('ef_lat',String(c.lat));setV('ef_lon',String(c.lng));
+      var cel=document.getElementById('coords');if(cel)cel.textContent='📍 Ubicación marcada: '+(+c.lat).toFixed(6)+', '+(+c.lng).toFixed(6);
+      if(d&&d.ok){
+        var dir=[d.calle,d.sector].filter(Boolean).join(', ');
+        if(!dir&&d.formatted)dir=String(d.formatted).split(',').slice(0,2).join(',');
+        var t=document.getElementById('direccion');if(t&&dir&&!t.value.trim())t.value=dir;
+        if(d.ciudad){var sel=document.getElementById('ciudad');for(var i=0;i<sel.options.length;i++){var v=(sel.options[i].value||sel.options[i].text||'').toLowerCase();if(v&&(d.ciudad.toLowerCase().indexOf(v)>=0||v.indexOf(d.ciudad.toLowerCase())>=0)){sel.selectedIndex=i;break;}}}
+      }
+      btn.textContent='Confirmar ubicación';btn.disabled=false;closeM();
+    }
+    fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lat:c.lat,lon:c.lng})})
+      .then(function(r){return r.json();}).then(done).catch(function(){done(null);});
+  }
+  function doSearch(q){
+    var bias=map?(map.getCenter().lat+','+map.getCenter().lng):'';
+    fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({q:q,session:sess,bias:bias})})
+      .then(function(r){return r.json();}).then(function(d){
+        var sug=document.getElementById('efSug');
+        if(!d.ok||!d.predictions||!d.predictions.length){sug.style.display='none';return;}
+        sug.innerHTML='';
+        d.predictions.forEach(function(p){
+          var row=document.createElement('div');
+          row.style.cssText='padding:10px 12px;border-bottom:.5px solid #eee;cursor:pointer';
+          row.innerHTML='<div style="font-weight:600;font-size:13px;color:#0f0f0f">'+(p.main||p.description)+'</div>'+(p.sec?'<div style="color:#888;font-size:12px">'+p.sec+'</div>':'');
+          row.addEventListener('click',function(){pickPlace(p.place_id,p.description);});
+          sug.appendChild(row);
+        });
+        sug.style.display='block';
+      }).catch(function(){var sg=document.getElementById('efSug');if(sg)sg.style.display='none';});
+  }
+  function pickPlace(pid,desc){
+    var sug=document.getElementById('efSug');sug.style.display='none';
+    document.getElementById('efSearch').value=desc;
+    fetch(FN,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({place_id:pid,session:sess})})
+      .then(function(r){return r.json();}).then(function(d){
+        sess=newSess();
+        if(d.ok&&d.lat&&d.lon&&map){map.setView([parseFloat(d.lat),parseFloat(d.lon)],17);}
+      }).catch(function(){});
+  }
+  (function(){var inp=document.getElementById('efSearch');if(!inp)return;
+    inp.addEventListener('input',function(){var q=inp.value.trim();clearTimeout(srchT);
+      if(q.length<3){document.getElementById('efSug').style.display='none';return;}
+      srchT=setTimeout(function(){doSearch(q);},320);});})();
+  document.getElementById('efBtnMapa').addEventListener('click',openM);
+  document.getElementById('efMapClose').addEventListener('click',closeM);
+  document.getElementById('efMapConfirm').addEventListener('click',confirmLoc);
+  document.getElementById('efMiUbic').addEventListener('click',tryLoc);
 })();
 </script>
 </body>
