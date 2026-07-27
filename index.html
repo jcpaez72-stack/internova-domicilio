@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>INTERLAB · Servicio a Domicilio</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<style>
+:root{--wa:#075e54;--wa2:#128c7e;--ink:#111b21;--sub:#667781;--line:#d1d7db;--field:#fff;--bg:#f0f2f5;
+ --amber:#8a5a00;--amberbg:#fff8e6;--amberbd:#ffe08a}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+.wrap{max-width:480px;margin:0 auto;background:#fff;min-height:100vh}
+.hd{background:linear-gradient(135deg,var(--wa),var(--wa2));color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:1000}
+.hd .av{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+.hd h1{margin:0;font-size:16px}.hd p{margin:1px 0 0;font-size:12px;opacity:.9}
+.body{padding:16px 18px 40px}
+.pre{background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:12px;padding:12px 14px;font-size:12.5px;margin-bottom:18px}
+.pre ul{margin:6px 0 0;padding-left:18px}
+.fld{margin-bottom:15px}
+.fld label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.req{color:#e11}
+.fld input,.fld select,.fld textarea{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink)}
+.fld textarea{min-height:64px;resize:vertical}
+.err{border-color:#e11 !important}
+.hint{font-size:11.5px;color:var(--sub);margin-top:4px}
+#map{height:200px;border-radius:12px;border:1px solid var(--line);margin-top:6px}
+.geo{margin-top:8px;font-size:13px;color:var(--wa2);background:none;border:1px solid var(--wa2);border-radius:9px;padding:8px 12px;cursor:pointer;width:100%;font-weight:600}
+.coords{font-size:11.5px;color:var(--sub);margin-top:6px;text-align:center}
+.btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;margin-top:10px;cursor:pointer}
+.btn:disabled{opacity:.5}
+.foot{font-size:11px;color:var(--sub);text-align:center;margin-top:14px}
+.errmsg{color:#e11;font-size:12.5px;margin-top:8px;display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="hd"><div class="av">🧪</div><div><h1>Servicio a Domicilio</h1><p>INTERLAB · Toma de muestra en casa</p></div></div>
+  <div class="body">
+    <div class="pre">
+      Antes de enviar, tenga en cuenta:
+      <ul>
+        <li>Costo adicional del servicio: <b>US$7.21</b> (se confirma la cobertura del sector).</li>
+        <li>Pruebas en <b>ayuno</b>: programe con <b>mín. 48 h</b> de anticipación.</li>
+        <li>El pago se realiza al momento de la toma. <b>No aplican ODA/COPAGOS</b> de seguros.</li>
+      </ul>
+    </div>
+
+    <form id="f">
+      <div class="fld"><label>Nombres y apellidos del paciente <span class="req">*</span></label><input id="nombre" required placeholder="Ej.: Juan Carlos Pérez"></div>
+      <div class="fld"><label>Cédula o pasaporte <span class="req">*</span></label><input id="cedula" required inputmode="numeric" placeholder="Ej.: 0912345678"></div>
+      <div class="fld"><label>Ciudad <span class="req">*</span></label>
+        <select id="ciudad" required><option value="">Seleccione…</option>
+          <option>Guayaquil</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option>
+          <option>Manta</option><option>Machala</option><option>Milagro</option><option>Quevedo</option></select></div>
+      <div class="fld"><label>Dirección y referencia para la toma <span class="req">*</span></label>
+        <textarea id="direccion" required placeholder="Calle principal, número y una referencia (ej.: casa esquinera portón blanco)"></textarea></div>
+
+      <div class="fld">
+        <label>📍 Marque su ubicación en el mapa <span class="req">*</span></label>
+        <div id="map"></div>
+        <button type="button" class="geo" id="btnGeo">📍 Usar mi ubicación actual</button>
+        <div class="coords" id="coords">Arrastre el pin a la ubicación exacta de la toma.</div>
+      </div>
+
+      <div class="fld"><label>Teléfono de contacto <span class="req">*</span></label><input id="telefono" required inputmode="tel" placeholder="Ej.: 0999123456"></div>
+      <div class="fld"><label>Exámenes que necesita <span class="req">*</span></label>
+        <textarea id="examenes" required placeholder="Escriba el listado de pruebas (ej.: biometría, glucosa, perfil lipídico)"></textarea>
+        <div class="hint">Si tiene la orden médica, podrá enviar la foto al asesor en el chat.</div></div>
+      <div class="fld"><label>Forma de pago <span class="req">*</span></label>
+        <select id="pago" required><option value="">Seleccione…</option>
+          <option>Efectivo</option><option>Transferencia</option><option>Tarjeta</option><option>Otra</option></select></div>
+      <div class="fld"><label>Fecha aproximada en que requiere el servicio <span class="req">*</span></label><input id="fecha" type="date" required></div>
+
+      <div class="errmsg" id="errmsg">Por favor complete todos los campos obligatorios y marque su ubicación en el mapa.</div>
+      <button class="btn" id="btnEnviar" type="submit">Enviar y continuar con un asesor →</button>
+      <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que confirmará la cobertura y coordinará la visita.</div>
+    </form>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ==== CONFIG ====
+var BOT_WA = "593995464059"; // número de PRUEBAS InterLAB (0995464059)
+// ================
+var center=[-2.1710,-79.9224]; // Guayaquil
+var map=L.map('map').setView(center,13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+var marker=L.marker(center,{draggable:true}).addTo(map);
+var lat=null, lon=null;
+function setC(la,lo){lat=+la.toFixed(6);lon=+lo.toFixed(6);document.getElementById('coords').textContent='Ubicación: '+lat+', '+lon;}
+marker.on('dragend',function(e){var p=e.target.getLatLng();setC(p.lat,p.lng);});
+map.on('click',function(e){marker.setLatLng(e.latlng);setC(e.latlng.lat,e.latlng.lng);});
+document.getElementById('btnGeo').onclick=function(){
+  if(!navigator.geolocation){alert('Su dispositivo no permite ubicación automática. Arrastre el pin manualmente.');return;}
+  navigator.geolocation.getCurrentPosition(function(pos){
+    var la=pos.coords.latitude, lo=pos.coords.longitude;
+    map.setView([la,lo],16);marker.setLatLng([la,lo]);setC(la,lo);
+  },function(){alert('No se pudo obtener la ubicación. Arrastre el pin manualmente.');});
+};
+setTimeout(function(){map.invalidateSize();},300);
+
+document.getElementById('f').addEventListener('submit',function(ev){
+  ev.preventDefault();
+  var ids=['nombre','cedula','ciudad','direccion','telefono','examenes','pago','fecha'];
+  var ok=true;
+  ids.forEach(function(id){var el=document.getElementById(id);if(!el.value.trim()){el.classList.add('err');ok=false;}else{el.classList.remove('err');}});
+  if(lat===null||lon===null){ok=false;document.getElementById('map').style.border='1px solid #e11';}
+  if(!ok){document.getElementById('errmsg').style.display='block';window.scrollTo(0,0);return;}
+  var g=function(id){return document.getElementById(id).value.trim();};
+  var maps="https://maps.google.com/?q="+lat+","+lon;
+  var t=
+   "*Solicitud de Servicio a Domicilio*\n"+
+   "👤 Paciente: "+g('nombre')+"\n"+
+   "🪪 Cédula/Pasaporte: "+g('cedula')+"\n"+
+   "🏙️ Ciudad: "+g('ciudad')+"\n"+
+   "🏠 Dirección: "+g('direccion')+"\n"+
+   "📍 Ubicación: "+maps+"\n"+
+   "📞 Teléfono: "+g('telefono')+"\n"+
+   "🧪 Exámenes: "+g('examenes')+"\n"+
+   "💳 Forma de pago: "+g('pago')+"\n"+
+   "📅 Fecha: "+g('fecha');
+  window.location.href="https://wa.me/"+BOT_WA+"?text="+encodeURIComponent(t);
+});
+</script>
+</body>
+</html>
