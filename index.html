@@ -82,7 +82,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 // ==== CONFIG ====
-var BOT_WA = "593995464059"; // número de PRUEBAS InterLAB (0995464059)
+var BOT_WA   = (location.href.match(/[?&]wa=([^&]+)/)||[])[1] || "593995464059";       // auto-cierre → chat del bot
+var EXEC     = (location.href.match(/[?&]executionId=([^&]+)/)||[])[1] || "";           // lo agrega Jelou al abrir el WebView
+var CALLBACK = "https://internova-callback.fn.jelou.ai";                                 // proxy CORS → callback de Jelou
 // ================
 var center=[-2.1710,-79.9224]; // Guayaquil
 var map=L.map('map').setView(center,13);
@@ -90,13 +92,26 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,att
 var marker=L.marker(center,{draggable:true}).addTo(map);
 var lat=null, lon=null;
 function setC(la,lo){lat=+la.toFixed(6);lon=+lo.toFixed(6);document.getElementById('coords').textContent='Ubicación: '+lat+', '+lon;}
-marker.on('dragend',function(e){var p=e.target.getLatLng();setC(p.lat,p.lng);});
-map.on('click',function(e){marker.setLatLng(e.latlng);setC(e.latlng.lat,e.latlng.lng);});
+// Geocodificación inversa (OSM/Nominatim): el pin autocompleta dirección y ciudad
+function geo(la,lo){
+  fetch("https://nominatim.openstreetmap.org/reverse?format=json&zoom=18&accept-language=es&lat="+la+"&lon="+lo)
+   .then(function(r){return r.json();}).then(function(j){
+     var a=(j&&j.address)||{};
+     var calle=[a.road,a.house_number].filter(Boolean).join(" ");
+     var sector=a.suburb||a.neighbourhood||a.quarter||a.residential||"";
+     var dir=[calle,sector].filter(Boolean).join(", ");
+     if(dir) document.getElementById('direccion').value=dir;
+     var city=a.city||a.town||a.village||a.county||"";
+     if(city){var sel=document.getElementById('ciudad');for(var i=0;i<sel.options.length;i++){var v=sel.options[i].value.toLowerCase();if(v&&(city.toLowerCase().indexOf(v)>=0||v.indexOf(city.toLowerCase())>=0)){sel.selectedIndex=i;break;}}}
+   }).catch(function(){});
+}
+marker.on('dragend',function(e){var p=e.target.getLatLng();setC(p.lat,p.lng);geo(p.lat,p.lng);});
+map.on('click',function(e){marker.setLatLng(e.latlng);setC(e.latlng.lat,e.latlng.lng);geo(e.latlng.lat,e.latlng.lng);});
 document.getElementById('btnGeo').onclick=function(){
   if(!navigator.geolocation){alert('Su dispositivo no permite ubicación automática. Arrastre el pin manualmente.');return;}
   navigator.geolocation.getCurrentPosition(function(pos){
     var la=pos.coords.latitude, lo=pos.coords.longitude;
-    map.setView([la,lo],16);marker.setLatLng([la,lo]);setC(la,lo);
+    map.setView([la,lo],16);marker.setLatLng([la,lo]);setC(la,lo);geo(la,lo);
   },function(){alert('No se pudo obtener la ubicación. Arrastre el pin manualmente.');});
 };
 setTimeout(function(){map.invalidateSize();},300);
@@ -109,19 +124,18 @@ document.getElementById('f').addEventListener('submit',function(ev){
   if(lat===null||lon===null){ok=false;document.getElementById('map').style.border='1px solid #e11';}
   if(!ok){document.getElementById('errmsg').style.display='block';window.scrollTo(0,0);return;}
   var g=function(id){return document.getElementById(id).value.trim();};
-  var maps="https://maps.google.com/?q="+lat+","+lon;
-  var t=
-   "*Solicitud de Servicio a Domicilio*\n"+
-   "👤 Paciente: "+g('nombre')+"\n"+
-   "🪪 Cédula/Pasaporte: "+g('cedula')+"\n"+
-   "🏙️ Ciudad: "+g('ciudad')+"\n"+
-   "🏠 Dirección: "+g('direccion')+"\n"+
-   "📍 Ubicación: "+maps+"\n"+
-   "📞 Teléfono: "+g('telefono')+"\n"+
-   "🧪 Exámenes: "+g('examenes')+"\n"+
-   "💳 Forma de pago: "+g('pago')+"\n"+
-   "📅 Fecha: "+g('fecha');
-  window.location.href="https://wa.me/"+BOT_WA+"?text="+encodeURIComponent(t);
+  var btn=document.getElementById('btnEnviar'); btn.disabled=true; btn.textContent='Enviando…';
+  var data={
+    executionId:EXEC,
+    paciente:g('nombre'), cedula:g('cedula'), ciudad:g('ciudad'), direccion:g('direccion'),
+    telefono:g('telefono'), examenes:g('examenes'), pago:g('pago'), fecha:g('fecha'),
+    lat:lat, lon:lon, maps:"https://maps.google.com/?q="+lat+","+lon
+  };
+  fetch(CALLBACK,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)})
+   .then(function(r){return r.json();})
+   .then(function(){ window.location.href="https://wa.me/"+BOT_WA; })
+   .catch(function(){ btn.disabled=false; btn.textContent='Enviar y continuar con un asesor →';
+     var em=document.getElementById('errmsg'); em.textContent='No pudimos enviar. Revise su conexión e intente de nuevo.'; em.style.display='block'; });
 });
 </script>
 </body>
