@@ -108,12 +108,19 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   if(!executionId){var m=location.href.match(/[?&]executionId=([^&#]+)/);if(m)executionId=decodeURIComponent(m[1]);}
   if(callback.indexOf("executionId=")>=0){var cm=callback.match(/^(.*?)[?&]executionId=([^&#]+)(.*)$/);if(cm){if(!executionId)executionId=decodeURIComponent(cm[2]);callback=cm[1];}}
   var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
-  // ---- Bloqueo / solo-lectura (una vez enviado no se puede reenviar/editar) ----
-  var LK=(qs.get("n")||"");var LOCK=(executionId&&LK)?("iv_"+executionId+"_"+LK):"";
-  function locked(){if(!LOCK)return null;try{return localStorage.getItem(LOCK);}catch(e){return null;}}
-  function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(d||{}));}catch(e){}}
-  function showLocked(){var d={};try{d=JSON.parse(locked())||{};}catch(e){}var SKIP={executionId:1,success:1,lat:1,lon:1,maps:1};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",direccion:"Dirección",lat:"Latitud",lon:"Longitud",telefono:"Teléfono",examenes:"Exámenes",pago:"Forma de pago",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
-  if(locked()){showLocked();return;}
+  // ---- Bloqueo / solo-lectura: una vez enviado, TODA reapertura sale solo-lectura ----
+  // Anclado al número del cliente ({{$user.id}} = param "u") para que funcione en el bot Y en el
+  // chat del asesor (misma persona/dispositivo). Una solicitud NUEVA (executionId distinto) vuelve
+  // a quedar editable, para poder pedir de nuevo o re-testear.
+  var LK=(qs.get("n")||"");
+  var U=(qs.get("u")||qs.get("celular")||"").replace(/\D/g,"");
+  var LOCK=LK?("iv_"+LK+"_"+(U||(executionId?("e_"+executionId):""))):"";
+  if(LK&&!U&&!executionId)LOCK="";
+  function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
+  function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
+  function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",direccion:"Dirección",lat:"Latitud",lon:"Longitud",telefono:"Teléfono",examenes:"Exámenes",pago:"Forma de pago",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  if(isLocked()){showLocked();return;}
 
   function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
