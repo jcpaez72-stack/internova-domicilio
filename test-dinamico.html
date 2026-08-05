@@ -46,16 +46,23 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <div class="fld"><label>Nombre de la persona de contacto <span class="req">*</span></label><input id="contacto" placeholder="Ej.: María Pérez (madre)"><div class="err" id="e_contacto">Ingrese el nombre de contacto.</div></div>
     <div class="fld"><label>Número de teléfono de contacto <span class="req">*</span></label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"><div class="err" id="e_telefono">Ingrese el teléfono.</div></div>
     <div class="fld"><label>Fecha tentativa para la realización de la prueba <span class="req">*</span></label><input id="fecha" type="date"><div class="err" id="e_fecha">Seleccione la fecha.</div></div>
-    <div class="fld"><label>¿Le han diagnosticado alguna enfermedad neurológica o cardíaca? <span class="req">*</span></label>
-      <select id="neuro"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
-      <div class="err" id="e_neuro">Seleccione una opción.</div></div>
-    <div class="fld" id="wrap_neurod" style="display:none"><label>¿Cuál?</label><input id="neuroDetalle" placeholder="Indique el diagnóstico"></div>
-    <div class="fld"><label>¿Ha sufrido convulsiones alguna vez? <span class="req">*</span></label>
-      <select id="convul"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
-      <div class="err" id="e_convul">Seleccione una opción.</div></div>
-    <div class="fld"><label>¿Está tomando alguna medicación? Indique cuál</label><input id="medicacion" placeholder="Ej.: Losartán 50 mg (deje vacío si no toma)"><div class="hint">Importante para la seguridad del procedimiento.</div></div>
-    <div class="fld"><label>Orden médica</label>
-      <div class="hint">📎 Por favor <b>envíe la foto de la orden médica al asesor</b> en la conversación de WhatsApp, después de enviar este formulario.</div></div>
+    <div class="fld"><label>Hora estimada de la cita <span class="req">*</span></label><input id="hora" type="time"><div class="hint">El asesor confirmará el horario disponible para su test.</div><div class="err" id="e_hora">Indique la hora estimada.</div></div>
+    <div class="fld"><label>¿Está tomando alguna medicación? ¿Cuál? <span class="req">*</span></label><input id="medicacion" placeholder="Indique el medicamento, o escriba «Ninguna»"><div class="hint">Importante para la seguridad del procedimiento.</div><div class="err" id="e_medicacion">Indique la medicación o escriba «Ninguna».</div></div>
+    <div class="fld"><label>¿Presenta fiebre o gripe actualmente? <span class="req">*</span></label>
+      <select id="fiebre"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
+      <div class="err" id="e_fiebre">Seleccione una opción.</div></div>
+    <!-- Tamizaje que solo aplica a los test de insulina (respuesta de InterLAB, hoja 2) -->
+    <div id="blk_ins" style="display:none">
+      <div class="fld"><label>¿Le han diagnosticado alguna enfermedad neurológica o cardíaca? <span class="req">*</span></label>
+        <select id="neuro"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
+        <div class="err" id="e_neuro">Seleccione una opción.</div></div>
+      <div class="fld" id="wrap_neurod" style="display:none"><label>¿Cuál?</label><input id="neuroDetalle" placeholder="Indique el diagnóstico"></div>
+      <div class="fld"><label>¿Ha sufrido convulsiones alguna vez? <span class="req">*</span></label>
+        <select id="convul"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
+        <div class="err" id="e_convul">Seleccione una opción.</div></div>
+    </div>
+    <div class="fld"><label>Orden médica <span class="req">*</span></label>
+      <div class="hint">📎 Al enviar este formulario le pediremos la <b>foto de la orden médica</b> por el chat. Es indispensable para confirmar el estudio.</div></div>
     <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
     <button class="btn" id="btn" type="button">Enviar solicitud de agendamiento →</button>
     <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que confirmará la disponibilidad de su cita.</div>
@@ -72,6 +79,11 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   if(!executionId){var m=location.href.match(/[?&]executionId=([^&#]+)/);if(m)executionId=decodeURIComponent(m[1]);}
   if(callback.indexOf("executionId=")>=0){var cm=callback.match(/^(.*?)[?&]executionId=([^&#]+)(.*)$/);if(cm){if(!executionId)executionId=decodeURIComponent(cm[2]);callback=cm[1];}}
   var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
+  // ---- Tamizaje condicional: solo los test de insulina lo llevan (hoja 2 de InterLAB) ----
+  // El bot manda ins=1 cuando el test elegido es de insulina; si no llega el parámetro se
+  // deduce del nombre del test (t=..._insu) para no perder el tamizaje por un dato faltante.
+  var ES_INSULINA=(qs.get("ins")==="1")||/_insu$/.test(qs.get("t")||"");
+  if(ES_INSULINA){var _b=document.getElementById("blk_ins");if(_b)_b.style.display="block";}
   // ---- Bloqueo / solo-lectura: una vez enviado, TODA reapertura sale solo-lectura ----
   // Anclado al número del cliente ({{$user.id}} = param "u") para que funcione en el bot Y en el
   // chat del asesor. Una solicitud NUEVA (executionId distinto) vuelve a quedar editable.
@@ -82,21 +94,30 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
   function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
-  function showLocked(){var d=lockedRec()||{};var rows="";var L={nombres:"Nombres",cedula:"Cédula/RUC",seguro:"Seguro médico",examenes:"Exámenes"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={nombres:"Paciente",edad:"Edad",cedula:"Cédula",contacto:"Persona de contacto",telefono:"Teléfono",fecha:"Fecha",hora:"Hora",medicacion:"Medicación",fiebre:"Fiebre o gripe",neuro:"Enf. neurológica/cardíaca",neuroDetalle:"¿Cuál?",convul:"Convulsiones"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
 
   function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
   function payloadDatos(){
-    return {nombres:val("nombres"),edad:val("edad"),cedula:val("cedula"),contacto:val("contacto"),telefono:val("telefono"),fecha:val("fecha"),neuro:val("neuro"),neuroDetalle:val("neuroDetalle"),convul:val("convul"),medicacion:val("medicacion")};
+    var p={nombres:val("nombres"),edad:val("edad"),cedula:val("cedula"),contacto:val("contacto"),
+      telefono:val("telefono"),fecha:val("fecha"),hora:val("hora"),medicacion:val("medicacion"),
+      fiebre:val("fiebre")};
+    if(ES_INSULINA){p.neuro=val("neuro");p.neuroDetalle=val("neuroDetalle");p.convul=val("convul");}
+    return p;
   }
   function validate(){
     var ok=true;
-    [["nombres",function(v){return v.length>=3;}],["edad",function(v){return v.length>0;}],
+    var reglas=[["nombres",function(v){return v.length>=3;}],["edad",function(v){return v.length>0;}],
      ["cedula",function(v){return v.length>=5;}],["contacto",function(v){return v.length>=3;}],
      ["telefono",function(v){return v.replace(/[^0-9]/g,"").length>=7;}],["fecha",function(v){return v.length>0;}],
-     ["neuro",function(v){return v.length>0;}],["convul",function(v){return v.length>0;}]
-    ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
+     ["hora",function(v){return v.length>0;}],["medicacion",function(v){return v.length>=2;}],
+     ["fiebre",function(v){return v.length>0;}]];
+    if(ES_INSULINA){
+      reglas.push(["neuro",function(v){return v.length>0;}]);
+      reglas.push(["convul",function(v){return v.length>0;}]);
+    }
+    reglas.forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
     return ok;
   }
   var btn=document.getElementById("btn");
