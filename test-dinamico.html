@@ -38,19 +38,29 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   <div class="head"><div class="av">🧪</div><div><h1>Agendamiento de Test Dinámico</h1><p>INTERLAB · Laboratorio Clínico</p></div></div>
   <div class="body" id="scr_datos">
     <div class="pre">
-      Complete los datos del paciente para coordinar su cita. Un asesor confirmará la <b>disponibilidad</b> y le indicará las instrucciones de preparación.
+      Complete la información del paciente para solicitar el agendamiento. Un asesor confirmará la <b>disponibilidad</b> de la cita.
     </div>
-    <div class="fld"><label>Nombres y apellidos del paciente <span class="req">*</span></label><input id="nombres" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombres">Ingrese el nombre.</div></div>
-    <div class="fld"><label>Número de cédula o pasaporte <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Ej.: 0912345678"><div class="err" id="e_cedula">Ingrese la cédula o pasaporte.</div></div>
-    <div class="fld"><label>Fecha en la que desea realizarse el test <span class="req">*</span></label><input id="fecha" type="date"><div class="err" id="e_fecha">Seleccione la fecha.</div></div>
-    <div class="fld"><label>Hora estimada <span class="req">*</span></label><input id="hora" type="time"><div class="err" id="e_hora">Seleccione la hora.</div></div>
+    <div class="fld"><label>Nombre completo del paciente <span class="req">*</span></label><input id="nombres" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombres">Ingrese el nombre completo.</div></div>
+    <div class="fld"><label>Edad <span class="req">*</span></label><input id="edad" inputmode="numeric" placeholder="Ej.: 34"><div class="err" id="e_edad">Ingrese la edad.</div></div>
+    <div class="fld"><label>Número de cédula de identidad <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Ej.: 0912345678"><div class="err" id="e_cedula">Ingrese la cédula.</div></div>
+    <div class="fld"><label>Nombre de la persona de contacto <span class="req">*</span></label><input id="contacto" placeholder="Ej.: María Pérez (madre)"><div class="err" id="e_contacto">Ingrese el nombre de contacto.</div></div>
     <div class="fld"><label>Número de teléfono de contacto <span class="req">*</span></label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"><div class="err" id="e_telefono">Ingrese el teléfono.</div></div>
-    <div class="fld"><label>Acompañante</label><input id="acompanante" placeholder="Nombre o cédula (si asistirá acompañado)"><div class="hint">Opcional. Indíquelo si el paciente asistirá acompañado.</div></div>
+    <div class="fld"><label>Fecha tentativa para la realización de la prueba <span class="req">*</span></label><input id="fecha" type="date"><div class="err" id="e_fecha">Seleccione la fecha.</div></div>
+    <div class="fld"><label>¿Le han diagnosticado alguna enfermedad neurológica o cardíaca? <span class="req">*</span></label>
+      <select id="neuro"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
+      <div class="err" id="e_neuro">Seleccione una opción.</div></div>
+    <div class="fld" id="wrap_neurod" style="display:none"><label>¿Cuál?</label><input id="neuroDetalle" placeholder="Indique el diagnóstico"></div>
+    <div class="fld"><label>¿Ha sufrido convulsiones alguna vez? <span class="req">*</span></label>
+      <select id="convul"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
+      <div class="err" id="e_convul">Seleccione una opción.</div></div>
+    <div class="fld"><label>¿Está tomando alguna medicación? Indique cuál</label><input id="medicacion" placeholder="Ej.: Losartán 50 mg (deje vacío si no toma)"><div class="hint">Importante para la seguridad del procedimiento.</div></div>
+    <div class="fld"><label>Orden médica</label>
+      <div class="hint">📎 Por favor <b>envíe la foto de la orden médica al asesor</b> en la conversación de WhatsApp, después de enviar este formulario.</div></div>
     <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
-    <button class="btn" id="btn" type="button">Enviar y agendar con un asesor →</button>
+    <button class="btn" id="btn" type="button">Enviar solicitud de agendamiento →</button>
     <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que confirmará la disponibilidad de su cita.</div>
   </div>
-  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Solicitud enviada!</h2><p style="color:#6b6b6b">Le estamos conectando con un asesor para confirmar su cita. Vuelva a la conversación de WhatsApp.</p></div>
+  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Solicitud enviada!</h2><p style="color:#6b6b6b">Le conectamos con un asesor para confirmar su cita. No olvide enviarle la foto de la orden médica.</p></div>
 </div>
 
 <script>
@@ -78,13 +88,14 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
   function payloadDatos(){
-    return {nombres:val("nombres"),cedula:val("cedula"),fecha:val("fecha"),hora:val("hora"),telefono:val("telefono"),acompanante:val("acompanante")};
+    return {nombres:val("nombres"),edad:val("edad"),cedula:val("cedula"),contacto:val("contacto"),telefono:val("telefono"),fecha:val("fecha"),neuro:val("neuro"),neuroDetalle:val("neuroDetalle"),convul:val("convul"),medicacion:val("medicacion")};
   }
   function validate(){
     var ok=true;
-    [["nombres",function(v){return v.length>=3;}],["cedula",function(v){return v.length>=5;}],
-     ["fecha",function(v){return v.length>0;}],["hora",function(v){return v.length>0;}],
-     ["telefono",function(v){return v.replace(/[^0-9]/g,"").length>=7;}]
+    [["nombres",function(v){return v.length>=3;}],["edad",function(v){return v.length>0;}],
+     ["cedula",function(v){return v.length>=5;}],["contacto",function(v){return v.length>=3;}],
+     ["telefono",function(v){return v.replace(/[^0-9]/g,"").length>=7;}],["fecha",function(v){return v.length>0;}],
+     ["neuro",function(v){return v.length>0;}],["convul",function(v){return v.length>0;}]
     ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
     return ok;
   }
@@ -104,10 +115,12 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       document.getElementById("ok").style.display="block";
       if(WA)setTimeout(function(){window.location.href="https://wa.me/"+WA;},1000);
     }catch(e){
-      btn.disabled=false;btn.textContent="Enviar y agendar con un asesor →";
+      btn.disabled=false;btn.textContent="Enviar solicitud de agendamiento →";
       var g=document.getElementById("e_global");g.textContent="No pudimos enviar. Revise su conexión e intente de nuevo.";g.style.display="block";
     }
   });
+  var ne=document.getElementById("neuro");
+  if(ne)ne.addEventListener("change",function(){document.getElementById("wrap_neurod").style.display=(ne.value==="Sí")?"block":"none";});
 })();
 </script>
 </body>
