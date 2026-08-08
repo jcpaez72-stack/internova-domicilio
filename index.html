@@ -150,17 +150,40 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     if(!validate()){document.getElementById("e_global").style.display="block";window.scrollTo(0,0);return;}
     btn.disabled=true;btn.textContent="Enviando…";
     var body=Object.assign({executionId:executionId,success:true},payloadDatos());
+    /* 8-ago: sin tiempo limite, si el callback no contesta la pantalla se queda en
+       «Enviando…» para siempre y el webview no cierra. Le paso a JC el 7-ago. */
+    var _ctl=("AbortController" in window)?new AbortController():null;
+    var _tardo=false;
+    var _to=setTimeout(function(){_tardo=true;if(_ctl)_ctl.abort();},20000);
     try{
-      var resp=await fetch(callback,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      var _op={method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)};
+      if(_ctl)_op.signal=_ctl.signal;
+      var resp=await fetch(callback,_op);
+      clearTimeout(_to);
       var out={};try{out=await resp.json();}catch(e){}
-      if(!resp.ok||out.ok===false)throw new Error("callback "+(out.status||resp.status));
+      if(!resp.ok||out.ok===false){
+        var _st=out.status||resp.status;
+        var _err=new Error("callback "+_st);
+        /* 404/410 = la ejecucion ya vencio: reintentar no sirve de nada */
+        _err.expirada=(_st===404||_st===410);
+        throw _err;
+      }
       lock(payloadDatos());
       document.getElementById("scr_datos").classList.add("hidden");
       document.getElementById("ok").style.display="block";
-      if(WA)setTimeout(function(){window.location.href="https://wa.me/"+WA;},1000);
+      if(WA)setTimeout(function(){window.location.href="https://wa.me/"+WA;},5000);
     }catch(e){
-      btn.disabled=false;btn.textContent="Enviar y continuar con un asesor →";
-      var g=document.getElementById("e_global");g.textContent="No pudimos enviar. Revise su conexión e intente de nuevo.";g.style.display="block";
+      clearTimeout(_to);
+      var g=document.getElementById("e_global");
+      if(e&&e.expirada){
+        /* vencida: el boton queda inhabilitado, reintentar no sirve */
+        btn.textContent="Sesión expirada";
+        g.textContent="La sesión de este formulario expiró. 🙏 Escríbanos por el chat y con gusto retomamos su solicitud desde donde quedó.";
+      }else{
+        btn.disabled=false;btn.textContent="Enviar y continuar con un asesor →";
+        g.textContent="No pudimos enviar sus datos. Revise su conexión e intente de nuevo. 🙏";
+      }
+      g.style.display="block";window.scrollTo(0,0);
     }
   });
 })();
