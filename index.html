@@ -45,9 +45,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <div class="pre">
       Antes de enviar, tenga en cuenta:
       <ul>
-        <li>Costo adicional del servicio: <b>US$7.21</b> (se confirma la cobertura del sector).</li>
+        
         <li>Pruebas en <b>ayuno</b>: programe con <b>mín. 48 h</b> de anticipación.</li>
-        <li>El pago se realiza al momento de la toma. <b>No aplican ODA/COPAGOS</b> de seguros.</li>
+        
       </ul>
     </div>
     <div class="fld"><label>Nombres y apellidos del paciente <span class="req">*</span></label><input id="nombre" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombre">Ingrese el nombre.</div></div>
@@ -65,8 +65,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <div class="fld"><label>Fecha en que requiere el servicio <span class="req">*</span></label><input id="fecha" type="date"><div class="err" id="e_fecha">Seleccione la fecha.</div></div>
     <div class="fld"><label>¿Va a aplicar seguro médico? <span class="req">*</span></label>
       <div style="display:flex;gap:8px">
-        <button type="button" id="seg_si" onclick="segPick('Si')" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Sí</button>
-        <button type="button" id="seg_no" onclick="segPick('No')" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">No</button>
+        <button type="button" id="seg_si" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Sí</button>
+        <button type="button" id="seg_no" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">No</button>
       </div>
       <div class="err" id="e_seguro">Seleccione una opción.</div>
       <div id="segAviso" class="hidden" style="margin-top:8px;background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:10px;padding:10px 12px;font-size:12.5px">Le informamos que para el servicio a domicilio no aplican ODAS ni Copagos.</div>
@@ -145,6 +145,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     document.getElementById("segAviso").classList.toggle("hidden",v!=="Si");
     setErr("seguro",false);
   }
+  document.getElementById("seg_si").addEventListener("click",function(){segPick("Si");});
+  document.getElementById("seg_no").addEventListener("click",function(){segPick("No");});
   function payloadDatos(){
     var la=val("ef_lat"),lo=val("ef_lon");
     return {paciente:val("nombre"),cedula:val("cedula"),ciudad:val("ciudad"),direccion:val("direccion"),
