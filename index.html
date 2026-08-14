@@ -63,6 +63,14 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <input type="hidden" id="ef_lat"><input type="hidden" id="ef_lon"></div>
     <div class="fld"><label>Teléfono de contacto <span class="req">*</span></label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"><div class="err" id="e_telefono">Ingrese el teléfono.</div></div>
     <div class="fld"><label>Fecha en que requiere el servicio <span class="req">*</span></label><input id="fecha" type="date"><div class="err" id="e_fecha">Seleccione la fecha.</div></div>
+    <div class="fld"><label>¿Va a aplicar seguro médico? <span class="req">*</span></label>
+      <div style="display:flex;gap:8px">
+        <button type="button" id="seg_si" onclick="segPick('Si')" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Sí</button>
+        <button type="button" id="seg_no" onclick="segPick('No')" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">No</button>
+      </div>
+      <div class="err" id="e_seguro">Seleccione una opción.</div>
+      <div id="segAviso" class="hidden" style="margin-top:8px;background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:10px;padding:10px 12px;font-size:12.5px">Le informamos que para el servicio a domicilio no aplican ODAS ni Copagos.</div>
+    </div>
     <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios y marque su ubicación.</div>
     <button class="btn" id="btn" type="button">Enviar y continuar con un asesor →</button>
     <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que confirmará la cobertura y coordinará la visita.</div>
@@ -129,10 +137,18 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 
   function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
+  var segVal="";
+  function segPick(v){segVal=v;
+    var si=document.getElementById("seg_si"),no=document.getElementById("seg_no");
+    si.style.background=v==="Si"?"var(--wa)":"#fff";si.style.color=v==="Si"?"#fff":"var(--ink)";si.style.borderColor=v==="Si"?"var(--wa)":"var(--line)";
+    no.style.background=v==="No"?"var(--wa)":"#fff";no.style.color=v==="No"?"#fff":"var(--ink)";no.style.borderColor=v==="No"?"var(--wa)":"var(--line)";
+    document.getElementById("segAviso").classList.toggle("hidden",v!=="Si");
+    setErr("seguro",false);
+  }
   function payloadDatos(){
     var la=val("ef_lat"),lo=val("ef_lon");
     return {paciente:val("nombre"),cedula:val("cedula"),ciudad:val("ciudad"),direccion:val("direccion"),
-      telefono:val("telefono"),fecha:val("fecha"),
+      telefono:val("telefono"),fecha:val("fecha"),seguro:segVal,
       lat:la,lon:lo,maps:(la&&lo)?("https://maps.google.com/?q="+la+","+lo):""};
   }
   function validate(){
@@ -142,6 +158,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
      ["telefono",function(v){return v.replace(/\D/g,"").length>=7;}],
      ["fecha",function(v){return !!v;}]
     ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
+    if(!segVal){setErr("seguro",true);ok=false;}
     return ok;
   }
   var btn=document.getElementById("btn");
