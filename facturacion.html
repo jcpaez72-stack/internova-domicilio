@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>INTERLAB · Facturación de Laboratorio Referido</title>
+<style>
+:root{--wa:#075e54;--wa2:#128c7e;--ink:#111b21;--sub:#667781;--line:#d1d7db;--field:#fff;--bg:#f0f2f5;
+ --amber:#8a5a00;--amberbg:#fff8e6;--amberbd:#ffe08a}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45}
+.wrap{max-width:480px;margin:0 auto;background:#fff;min-height:100vh}
+.head{background:linear-gradient(135deg,var(--wa),var(--wa2));color:#fff;padding:16px 18px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:1000}
+.head .av{width:40px;height:40px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+.head h1{margin:0;font-size:16px}.head p{margin:1px 0 0;font-size:12px;opacity:.9}
+.body{padding:16px 18px 40px}
+.pre{background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:12px;padding:12px 14px;font-size:12.5px;margin-bottom:18px}
+.fld{margin-bottom:15px}
+.fld label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+.req{color:#e11}
+.fld input,.fld select,.fld textarea{width:100%;font:inherit;font-size:15px;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:var(--field);color:var(--ink)}
+.fld textarea{min-height:70px;resize:vertical}
+.invalid{border-color:#e11 !important}
+.hint{font-size:11.5px;color:var(--sub);margin-top:4px}
+.err{color:#e11;font-size:12px;margin-top:4px;display:none}
+.btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;margin-top:10px;cursor:pointer}
+.btn:disabled{opacity:.5}
+.foot{font-size:11px;color:var(--sub);text-align:center;margin-top:14px}
+.hidden{display:none !important}
+#ok{display:none;text-align:center;padding:50px 20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head"><div class="av">🧾</div><div><h1>Facturación · Laboratorio Referido</h1><p>INTERLAB · Laboratorio Clínico</p></div></div>
+  <div class="body" id="scr_datos">
+    <div class="pre">
+      Complete los datos del laboratorio o convenio para la emisión de la factura. Un asesor procesará su solicitud. Luego, en el chat, le pediremos el <b>comprobante de la transferencia</b>.
+    </div>
+    <div class="fld"><label>Número de laboratorio o convenio <span class="req">*</span></label><input id="numeroLab" placeholder="Ej.: LAB-0123 / N.º de convenio"><div class="err" id="e_numeroLab">Ingrese el número de laboratorio o convenio.</div></div>
+    <div class="fld"><label>RUC de la empresa <span class="req">*</span></label><input id="ruc" inputmode="numeric" placeholder="RUC (13 dígitos)"><div class="hint">RUC del laboratorio o empresa remitente.</div><div class="err" id="e_ruc">Ingrese el RUC.</div></div>
+    <div class="fld"><label>Fecha de los exámenes, o nombres de los pacientes <span class="req">*</span></label>
+      <textarea id="detalle" placeholder="Ej.: exámenes del 12/08/2026 — o los nombres de los pacientes"></textarea>
+      <div class="hint">Indique la fecha de los exámenes que está cancelando o, si lo prefiere, los nombres de los pacientes.</div>
+      <div class="err" id="e_detalle">Complete este campo.</div></div>
+    <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
+    <button class="btn" id="btn" type="button">Enviar y continuar con un asesor →</button>
+    <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que procesará la emisión de su factura.</div>
+  </div>
+  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Datos enviados!</h2><p style="color:#6b6b6b">Vuelva a la conversación de WhatsApp para adjuntar el comprobante de la transferencia.</p></div>
+</div>
+
+<script>
+(function(){
+  var qs=new URLSearchParams(location.search);
+  var DEFAULT_CALLBACK="https://internova-callback.fn.jelou.ai";
+  var executionId=qs.get("executionId")||"";
+  var callback=qs.get("callback")||DEFAULT_CALLBACK;
+  if(!executionId){var m=location.href.match(/[?&]executionId=([^&#]+)/);if(m)executionId=decodeURIComponent(m[1]);}
+  if(callback.indexOf("executionId=")>=0){var cm=callback.match(/^(.*?)[?&]executionId=([^&#]+)(.*)$/);if(cm){if(!executionId)executionId=decodeURIComponent(cm[2]);callback=cm[1];}}
+  var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
+  // ---- Bloqueo / solo-lectura: una vez enviado, TODA reapertura sale solo-lectura ----
+  // Anclado al numero del cliente ({{$user.id}} = param "u") para que funcione en el bot Y en el
+  // chat del asesor. Una solicitud NUEVA (executionId distinto) vuelve a quedar editable.
+  var LK=(qs.get("n")||"");
+  var U=(qs.get("u")||qs.get("celular")||"").replace(/\D/g,"");
+  var LOCK=LK?("iv_"+LK+"_"+(U||(executionId?("e_"+executionId):""))):"";
+  if(LK&&!U&&!executionId)LOCK="";
+  function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
+  function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
+  function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={numeroLab:"N.º laboratorio/convenio",ruc:"RUC",detalle:"Fecha / pacientes"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta informacion ya fue enviada y no se puede modificar aqui.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  if(isLocked()){showLocked();return;}
+
+  function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
+  function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
+  function payloadDatos(){
+    return {numeroLab:val("numeroLab"),ruc:val("ruc"),detalle:val("detalle")};
+  }
+  function validate(){
+    var ok=true;
+    [["numeroLab",function(v){return v.length>=1;}],["ruc",function(v){return v.replace(/\D/g,"").length>=10;}],
+     ["detalle",function(v){return v.length>=2;}]
+    ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
+    return ok;
+  }
+  var btn=document.getElementById("btn");
+  btn.addEventListener("click",async function(){
+    document.getElementById("e_global").style.display="none";
+    if(!validate()){document.getElementById("e_global").style.display="block";window.scrollTo(0,0);return;}
+    if(!executionId){var ge=document.getElementById("e_global");ge.textContent="Abra este formulario desde el chat de WhatsApp para poder enviarlo.";ge.style.display="block";window.scrollTo(0,0);return;}
+    btn.disabled=true;btn.textContent="Enviando…";
+    var body=Object.assign({executionId:executionId,success:true},payloadDatos());
+    /* sin tiempo limite, si el callback no contesta la pantalla se queda en «Enviando…» para
+       siempre y el webview no cierra (leccion cotizacion 8-ago). */
+    var _ctl=("AbortController" in window)?new AbortController():null;
+    var _tardo=false;
+    var _to=setTimeout(function(){_tardo=true;if(_ctl)_ctl.abort();},20000);
+    try{
+      var _op={method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)};
+      if(_ctl)_op.signal=_ctl.signal;
+      var resp=await fetch(callback,_op);
+      clearTimeout(_to);
+      var out={};try{out=await resp.json();}catch(e){}
+      if(!resp.ok||out.ok===false){
+        var _st=out.status||resp.status;
+        var _err=new Error("callback "+_st);
+        /* 404/410 = la ejecucion ya vencio: reintentar no sirve de nada */
+        _err.expirada=(_st===404||_st===410);
+        throw _err;
+      }
+      lock(payloadDatos());
+      document.getElementById("scr_datos").classList.add("hidden");
+      document.getElementById("ok").style.display="block";
+      if(WA)setTimeout(function(){window.location.href="https://wa.me/"+WA;},5000);
+    }catch(e){
+      clearTimeout(_to);
+      var g=document.getElementById("e_global");
+      if(e&&e.expirada){
+        btn.textContent="Sesión expirada";
+        g.textContent="La sesión de este formulario expiró. 🙏 Escríbanos por el chat y con gusto retomamos su solicitud desde donde quedó.";
+      }else{
+        btn.disabled=false;btn.textContent="Enviar y continuar con un asesor →";
+        g.textContent="No pudimos enviar sus datos. Revise su conexión e intente de nuevo. 🙏";
+      }
+      g.style.display="block";window.scrollTo(0,0);
+    }
+  });
+})();
+</script>
+</body>
+</html>
