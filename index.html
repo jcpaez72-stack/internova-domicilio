@@ -73,6 +73,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     </div>
     <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios y marque su ubicación.</div>
     <button class="btn" id="btn" type="button">Enviar y continuar con un asesor →</button>
+    <button class="btn" id="btnCancel" type="button" style="background:#fff;color:var(--wa);border:2px solid var(--wa);margin-top:8px">Cancelar y volver al menú</button>
     <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que confirmará la cobertura y coordinará la visita.</div>
   </div>
   <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Solicitud enviada!</h2><p style="color:#6b6b6b">Le estamos conectando con un asesor. Vuelva a la conversación de WhatsApp.</p></div>
@@ -204,6 +205,19 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       }
       g.style.display="block";window.scrollTo(0,0);
     }
+  });
+
+  /* Botón Cancelar: mismo callback, pero payload distinguible {cancelado:true} (sin datos del form).
+     Mantiene el webview BLOQUEANTE ante Jelou; el flujo F3 rutea al menú al ver cancelado=true. */
+  var btnCancel=document.getElementById("btnCancel");
+  if(btnCancel) btnCancel.addEventListener("click",async function(){
+    btnCancel.disabled=true;btnCancel.textContent="Saliendo…";
+    try{
+      await fetch(callback,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({executionId:executionId,success:true,cancelado:true})});
+    }catch(e){}
+    if(WA){ location.href="https://wa.me/"+WA; }
+    else { btnCancel.disabled=false; btnCancel.textContent="Cancelar y volver al menú"; }
   });
 })();
 </script>
