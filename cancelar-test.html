@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prueba botón Cancelar</title>
+<style>
+body{margin:0;font-family:-apple-system,Arial,sans-serif;background:#f0f2f5;color:#111}
+.wrap{max-width:460px;margin:0 auto;background:#fff;min-height:100vh;padding:18px}
+h1{font-size:17px} .sub{color:#667781;font-size:13px}
+.btn{width:100%;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;margin-top:12px;cursor:pointer}
+.b-ok{background:#075e54;color:#fff}
+.b-cancel{background:#fff;color:#075e54;border:2px solid #075e54}
+pre{background:#0b141a;color:#7fdb8a;padding:12px;border-radius:10px;font-size:12px;overflow:auto;white-space:pre-wrap;word-break:break-all}
+.lbl{font-size:12px;color:#667781;margin-top:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🧪 Prueba — botón Cancelar en WebView</h1>
+  <p class="sub">Demuestra que "Cancelar" dispara el mismo callback con un payload distinguible <b>{cancelado:true}</b>, sin enviar datos del formulario.</p>
+
+  <button class="btn b-ok" id="bEnviar">Enviar (datos normales) →</button>
+  <button class="btn b-cancel" id="bCancelar">Cancelar / Salir</button>
+
+  <div class="lbl">executionId leído de la URL:</div>
+  <pre id="eid">—</pre>
+  <div class="lbl">Último POST enviado (body):</div>
+  <pre id="req">—</pre>
+  <div class="lbl">Respuesta del proxy:</div>
+  <pre id="res">—</pre>
+</div>
+
+<script>
+(function(){
+  var qs=new URLSearchParams(location.search);
+  var DEFAULT_CALLBACK="https://internova-callback.fn.jelou.ai";
+  var executionId=qs.get("executionId")||"";
+  var callback=qs.get("callback")||DEFAULT_CALLBACK;
+  if(!executionId){var m=location.href.match(/[?&]executionId=([^&#]+)/);if(m)executionId=decodeURIComponent(m[1]);}
+  var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
+  document.getElementById("eid").textContent=executionId||"(no llegó executionId en la URL)";
+
+  async function enviar(body,btn){
+    document.getElementById("req").textContent=JSON.stringify(body,null,2);
+    document.getElementById("res").textContent="enviando…";
+    btn.disabled=true;
+    try{
+      var r=await fetch(callback,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+      var t=await r.text();
+      document.getElementById("res").textContent="HTTP "+r.status+"\n"+t;
+      if(r.ok){ setTimeout(function(){ if(WA) location.href="https://wa.me/"+WA; }, 4000); }
+    }catch(e){
+      document.getElementById("res").textContent="ERROR: "+e;
+    }
+    btn.disabled=false;
+  }
+  document.getElementById("bEnviar").addEventListener("click",function(){
+    enviar({executionId:executionId,success:true,paciente:"Juan Test",cedula:"0912345678"},this);
+  });
+  document.getElementById("bCancelar").addEventListener("click",function(){
+    enviar({executionId:executionId,success:true,cancelado:true},this);
+  });
+})();
+</script>
+</body>
+</html>
