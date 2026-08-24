@@ -135,6 +135,12 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
   function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",direccion:"Dirección",lat:"Latitud",lon:"Longitud",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
+  // Candado SERVER-SIDE (internova-formlock): bloquea en cualquier dispositivo
+  var IN_FLURL="https://internova-formlock.fn.jelou.ai";
+  function inFormId(){return (qs.get("n")||"")+"_"+(qs.get("tipo")||"");}
+  function inSrvMark(d){if(!executionId||!qs.get("n"))return;try{fetch(IN_FLURL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accion:"marcar",exec:executionId,form:inFormId(),datos:d||{}})}).catch(function(){});}catch(e){}}
+  function inSrvCheck(){if(!executionId||!qs.get("n"))return;if(isLocked())return;var _v=document.createElement("div");_v.style.cssText="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font:600 15px system-ui,-apple-system,sans-serif;color:#6b6b6b";_v.textContent="Verificando\u2026";document.body.appendChild(_v);var _q=function(){if(_v&&_v.parentNode)_v.remove();};var _to=setTimeout(_q,4000);try{fetch(IN_FLURL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accion:"consultar",exec:executionId,form:inFormId()})}).then(function(r){return r.json();}).then(function(o){clearTimeout(_to);_q();if(o&&o.ok&&o.enviado){lock(o.datos||{});showLocked();}}).catch(function(){clearTimeout(_to);_q();});}catch(e){clearTimeout(_to);_q();}}
+  inSrvCheck();
 
   function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
@@ -189,6 +195,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
         throw _err;
       }
       lock(payloadDatos());
+      inSrvMark(payloadDatos());
       document.getElementById("scr_datos").classList.add("hidden");
       document.getElementById("ok").style.display="block";
       if(WA)setTimeout(function(){window.location.href="https://wa.me/"+WA;},5000);
