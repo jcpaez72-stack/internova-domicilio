@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Prueba embebido — Consulta de Resultados</title>
+<style>
+  :root { --verde:#0E9F6E; --gris:#6B7280; --borde:#E5E7EB; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#F3F4F6;color:#111827}
+  .barra{background:#fff;border-bottom:1px solid var(--borde);padding:10px 14px;position:sticky;top:0;z-index:10}
+  .barra h1{margin:0;font-size:15px;font-weight:600}
+  .barra p{margin:2px 0 0;font-size:12px;color:var(--gris)}
+  .diag{background:#FFFBEB;border-bottom:1px solid #FDE68A;padding:10px 14px;font-size:12px;line-height:1.5}
+  .diag b{display:block;margin-bottom:4px;font-size:12px}
+  .chk{display:flex;align-items:flex-start;gap:7px;margin:5px 0}
+  .chk span:first-child{flex:0 0 16px;font-weight:700}
+  .marco{width:100%;height:calc(100vh - 210px);min-height:420px;border:0;display:block;background:#fff}
+  .pie{background:#fff;border-top:1px solid var(--borde);padding:10px 14px;font-size:11px;color:var(--gris)}
+  .estado{padding:8px 14px;font-size:12px;font-weight:600}
+  .ok{background:#ECFDF5;color:#047857}
+  .fail{background:#FEF2F2;color:#B91C1C}
+  .wait{background:#EFF6FF;color:#1D4ED8}
+  code{background:#F3F4F6;padding:1px 4px;border-radius:3px;font-size:11px}
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <h1>Prueba técnica — embebido del portal de resultados</h1>
+  <p>Uso interno. No es el flujo final del paciente.</p>
+</div>
+
+<div id="estado" class="estado wait">Cargando el portal…</div>
+
+<div class="diag">
+  <b>Qué hay que verificar (en este orden):</b>
+  <div class="chk"><span>1.</span><span>¿Se ve el formulario del portal abajo (campos Número de Orden y Clave)?</span></div>
+  <div class="chk"><span>2.</span><span>¿Aparece el reCAPTCHA («No soy un robot»)?</span></div>
+  <div class="chk"><span>3.</span><span>¿Se puede escribir en los campos con el teclado?</span></div>
+  <div class="chk"><span>4.</span><span>¿El reCAPTCHA deja marcarse y valida (aparece el visto verde)?</span></div>
+  <div class="chk"><span>5.</span><span>Con una orden real: ¿entrega el PDF y se puede abrir o descargar?</span></div>
+</div>
+
+<iframe
+  id="marco"
+  class="marco"
+  src="https://resultadosgye.interlab.com.ec/"
+  referrerpolicy="no-referrer-when-downgrade"
+  allow="clipboard-write"
+  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"
+></iframe>
+
+<div class="pie">
+  Portal embebido: <code>resultadosgye.interlab.com.ec</code><br>
+  Si el recuadro se queda en blanco, el portal bloquea el embebido desde este contexto.
+</div>
+
+<script>
+(function(){
+  var marco = document.getElementById('marco');
+  var estado = document.getElementById('estado');
+  var cargo = false;
+
+  function set(clase, texto){
+    estado.className = 'estado ' + clase;
+    estado.textContent = texto;
+  }
+
+  marco.addEventListener('load', function(){
+    cargo = true;
+    set('ok', 'El portal respondió y se montó en el marco. Revise los 5 puntos de arriba.');
+  });
+
+  marco.addEventListener('error', function(){
+    set('fail', 'El portal NO se pudo cargar dentro del marco.');
+  });
+
+  // Si a los 12 s no disparó load, es señal de bloqueo o de red muy lenta
+  setTimeout(function(){
+    if(!cargo){
+      set('fail', 'Pasaron 12 s sin que el portal cargue. Probable bloqueo del embebido.');
+    }
+  }, 12000);
+})();
+</script>
+
+</body>
+</html>
