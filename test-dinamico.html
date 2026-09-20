@@ -25,6 +25,10 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 .fld textarea{min-height:70px;resize:vertical}
 .invalid{border-color:#e11 !important}
 .hint{font-size:11.5px;color:var(--sub);margin-top:4px}
+.horario{background:#eef7f4;border:1px solid #b9ded4;border-radius:10px;padding:11px 13px;margin-bottom:15px;font-size:13px;color:#0b4f42}
+.horario span{display:block}
+.horario .horario_tit{font-weight:700;margin-bottom:3px}
+.horario .horario_pie{font-size:11.5px;color:#3f7d70;margin-top:4px}
 .err{color:#e11;font-size:12px;margin-top:4px;display:none}
 .btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;margin-top:10px;cursor:pointer}
 .btn:disabled{opacity:.5}
@@ -38,7 +42,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   <div class="head"><div class="av">🧪</div><div><h1>Agendamiento de Test Dinámico</h1><p>INTERLAB · Laboratorio Clínico</p></div></div>
   <div class="body" id="scr_datos">
     <div class="pre">
-      Complete la información del paciente para solicitar el agendamiento. Un asesor confirmará la <b>disponibilidad</b> de la cita.
+      Complete la información de <b>la persona que se va a realizar el examen (paciente)</b> para solicitar el agendamiento. Un asesor confirmará la <b>disponibilidad</b> de la cita.
     </div>
     <div class="fld"><label>Nombre completo del paciente <span class="req">*</span></label><input id="nombres" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombres">Ingrese el nombre completo.</div></div>
     <div class="fld"><label>Edad <span class="req">*</span></label><input id="edad" inputmode="numeric" placeholder="Ej.: 34"><div class="err" id="e_edad">Ingrese la edad.</div></div>
@@ -46,7 +50,13 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <div class="fld"><label>Nombre de la persona de contacto <span class="req">*</span></label><input id="contacto" placeholder="Ej.: María Pérez (madre)"><div class="err" id="e_contacto">Ingrese el nombre de contacto.</div></div>
     <div class="fld"><label>Número de teléfono de contacto <span class="req">*</span></label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"><div class="err" id="e_telefono">Ingrese el teléfono.</div></div>
     <div class="fld"><label>Fecha tentativa para la realización de la prueba <span class="req">*</span></label><input id="fecha" type="date"><div class="err" id="e_fecha">Seleccione la fecha.</div></div>
-    <div class="fld"><label>Hora estimada de la cita <span class="req">*</span></label><input id="hora" type="time"><div class="hint">El asesor confirmará el horario disponible para su test.</div><div class="err" id="e_hora">Indique la hora estimada.</div></div>
+    <!-- El paciente NO elige la hora: la ventana la fija el laboratorio y el asesor coordina.
+         Antes había un campo de hora libre y se podían pedir citas fuera de horario (JC, 19-sep). -->
+    <div class="horario" id="horario">
+      <span class="horario_tit">Horario de atención</span>
+      <span id="horario_txt">Los test dinámicos se realizan de <b>07h00 a 12h00</b>.</span>
+      <span class="horario_pie">Un asesor coordinará con usted la hora exacta dentro de ese horario.</span>
+    </div>
     <div class="fld"><label>¿Está tomando alguna medicación? ¿Cuál? <span class="req">*</span></label><input id="medicacion" placeholder="Indique el medicamento, o escriba «Ninguna»"><div class="hint">Importante para la seguridad del procedimiento.</div><div class="err" id="e_medicacion">Indique la medicación o escriba «Ninguna».</div></div>
     <div class="fld"><label>¿Presenta fiebre o gripe actualmente? <span class="req">*</span></label>
       <select id="fiebre"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
@@ -83,6 +93,15 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   // deduce del nombre del test (t=..._insu) para no perder el tamizaje por un dato faltante.
   var ES_INSULINA=(qs.get("ins")==="1")||/_insu$/.test(qs.get("t")||"");
   if(ES_INSULINA){var _b=document.getElementById("blk_ins");if(_b)_b.style.display="block";}
+  // ---- Horario: 07h00 a 12h00 en general; el test de Sudor llega hasta las 15h00 ----
+  // El bot manda t=gye_sudor cuando el paciente eligió el test de Sudor (es el único, y solo
+  // existe en Guayaquil). Si el parámetro no llega, se muestra el horario general, que es el
+  // más restrictivo: nunca prometemos una hora que el laboratorio no atiende.
+  var ES_SUDOR=/(^|_)sudor$/.test(qs.get("t")||"");
+  if(ES_SUDOR){
+    var _h=document.getElementById("horario_txt");
+    if(_h)_h.innerHTML="El <b>test de Sudor</b> se realiza de <b>07h00 a 15h00</b>.";
+  }
   // ---- Bloqueo / solo-lectura: una vez enviado, TODA reapertura sale solo-lectura ----
   // Anclado al número del cliente ({{$user.id}} = param "u") para que funcione en el bot Y en el
   // chat del asesor. Una solicitud NUEVA (executionId distinto) vuelve a quedar editable.
@@ -93,7 +112,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
   function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
-  function showLocked(){var d=lockedRec()||{};var rows="";var L={nombres:"Paciente",edad:"Edad",cedula:"Cédula",contacto:"Persona de contacto",telefono:"Teléfono",fecha:"Fecha",hora:"Hora",medicacion:"Medicación",fiebre:"Fiebre o gripe",neuro:"Enf. neurológica/cardíaca",neuroDetalle:"¿Cuál?",convul:"Convulsiones"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={nombres:"Paciente",edad:"Edad",cedula:"Cédula",contacto:"Persona de contacto",telefono:"Teléfono",fecha:"Fecha",medicacion:"Medicación",fiebre:"Fiebre o gripe",neuro:"Enf. neurológica/cardíaca",neuroDetalle:"¿Cuál?",convul:"Convulsiones"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
   // Candado SERVER-SIDE (internova-formlock): bloquea en cualquier dispositivo
   var IN_FLURL="https://internova-formlock.fn.jelou.ai";
@@ -106,7 +125,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
   function payloadDatos(){
     var p={nombres:val("nombres"),edad:val("edad"),cedula:val("cedula"),contacto:val("contacto"),
-      telefono:val("telefono"),fecha:val("fecha"),hora:val("hora"),medicacion:val("medicacion"),
+      telefono:val("telefono"),fecha:val("fecha"),medicacion:val("medicacion"),
       fiebre:val("fiebre")};
     if(ES_INSULINA){p.neuro=val("neuro");p.neuroDetalle=val("neuroDetalle");p.convul=val("convul");}
     return p;
@@ -116,7 +135,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     var reglas=[["nombres",function(v){return v.length>=3;}],["edad",function(v){return v.length>0;}],
      ["cedula",function(v){return v.length>=5;}],["contacto",function(v){return v.length>=3;}],
      ["telefono",function(v){return v.replace(/[^0-9]/g,"").length>=7;}],["fecha",function(v){return v.length>0;}],
-     ["hora",function(v){return v.length>0;}],["medicacion",function(v){return v.length>=2;}],
+     ["medicacion",function(v){return v.length>=2;}],
      ["fiebre",function(v){return v.length>0;}]];
     if(ES_INSULINA){
       reglas.push(["neuro",function(v){return v.length>0;}]);
