@@ -93,7 +93,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <div class="err" id="e_direccion">Ingrese la dirección.</div>
       <input type="hidden" id="ef_lat"><input type="hidden" id="ef_lon"></div>
     <div class="fld"><label>Teléfono de contacto <span class="req">*</span></label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"><div class="err" id="e_telefono">Ingrese el teléfono.</div></div>
-    <div class="fld"><label>Fecha en que requiere el servicio <span class="req">*</span></label><input id="fecha" type="date"><div class="err" id="e_fecha">Seleccione la fecha.</div></div>
+    <div class="fld"><label>Fecha en que requiere el servicio <span class="req">*</span></label><input id="fecha" type="date">
+      <div class="hint" id="rangoFecha"></div>
+      <div class="err" id="e_fecha">Seleccione una fecha dentro del rango permitido.</div></div>
     <div class="fld"><label>¿Va a aplicar seguro médico? <span class="req">*</span></label>
       <div style="display:flex;gap:8px">
         <button type="button" id="seg_si" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Sí</button>
@@ -236,13 +238,42 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       telefono:val("telefono"),fecha:val("fecha"),seguro:segVal,
       lat:la,lon:lo,maps:(la&&lo)?("https://maps.google.com/?q="+la+","+lo):""};
   }
+  // ---- Ventana de agendamiento: del dia siguiente hasta 3 dias despues ----
+  // Regla de InterLAB (JC, 19-sep): «solo se puede agendar 3 dias posteriores como maximo».
+  // Si llena el formulario el dia 1, puede elegir 2, 3 o 4. Antes el calendario no tenia
+  // ningun limite: se podian pedir fechas pasadas o de dentro de seis meses.
+  function _hoyEC(){
+    // La regla es de un laboratorio que opera en Ecuador (UTC-5). Si el telefono del
+    // paciente esta en otra zona horaria, calcular con la fecha del dispositivo correria
+    // la ventana un dia entero, asi que se calcula siempre sobre la hora de Ecuador.
+    var a=new Date();
+    return new Date(a.getTime()+(a.getTimezoneOffset()*60000)-(5*3600000));
+  }
+  function _pad(x){return (x<10?"0":"")+x;}
+  function _iso(d){return d.getFullYear()+"-"+_pad(d.getMonth()+1)+"-"+_pad(d.getDate());}
+  function _dm(d){return _pad(d.getDate())+"/"+_pad(d.getMonth()+1);}
+  var DIA=86400000, _h=_hoyEC();
+  var F_MIN=_iso(new Date(_h.getTime()+DIA)), F_MAX=_iso(new Date(_h.getTime()+3*DIA));
+  (function(){
+    var fe=document.getElementById("fecha");
+    if(fe){fe.min=F_MIN;fe.max=F_MAX;}
+    var r=document.getElementById("rangoFecha");
+    if(r)r.innerHTML="Puede agendar desde el <b>"+_dm(new Date(_h.getTime()+DIA))+
+      "</b> hasta el <b>"+_dm(new Date(_h.getTime()+3*DIA))+"</b>.";
+    var e=document.getElementById("e_fecha");
+    if(e)e.textContent="Elija una fecha entre el "+_dm(new Date(_h.getTime()+DIA))+
+      " y el "+_dm(new Date(_h.getTime()+3*DIA))+".";
+  })();
+
   function validate(){
     var ok=true;
     [["nombre",function(v){return v.length>=3;}],["cedula",function(v){return v.length>=5;}],
      ["ciudad",function(v){return !!v;}],["vivienda",function(v){return !!v;}],
      ["direccion",function(v){return v.length>=4;}],
      ["telefono",function(v){return v.replace(/\D/g,"").length>=7;}],
-     ["fecha",function(v){return !!v;}]
+     // min/max del campo no basta: el navegador de WhatsApp no siempre los respeta,
+     // asi que el limite real lo pone esta comparacion (las fechas ISO se comparan como texto).
+     ["fecha",function(v){return !!v && v>=F_MIN && v<=F_MAX;}]
     ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
     // Solo se exigen los campos del tipo de vivienda elegido. La etapa queda opcional:
     // hay urbanizaciones de una sola etapa y exigirla dejaria al paciente sin poder enviar.
