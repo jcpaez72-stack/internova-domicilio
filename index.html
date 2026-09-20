@@ -37,6 +37,10 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 .hidden{display:none !important}
 .tres{display:flex;gap:8px}
 .tres .fld{flex:1;min-width:0}
+.horario{background:#eef7f4;border:1px solid #b9ded4;border-radius:10px;padding:11px 13px;margin-bottom:15px;font-size:13px;color:#0b4f42}
+.horario span{display:block}
+.horario .horario_tit{font-weight:700;margin-bottom:3px}
+.horario .horario_pie{font-size:11.5px;color:#3f7d70;margin-top:5px}
 #ok{display:none;text-align:center;padding:50px 20px}
 </style>
 </head>
@@ -44,14 +48,10 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 <div class="wrap">
   <div class="head"><div class="av">🧪</div><div><h1>Servicio a Domicilio</h1><p>INTERLAB · Toma de muestra en casa</p></div></div>
   <div class="body" id="scr_datos">
-    <div class="pre">
-      Antes de enviar, tenga en cuenta:
-      <ul>
-        
-        <li>Pruebas en <b>ayuno</b>: programe con <b>mín. 48 h</b> de anticipación.</li>
-        
-      </ul>
-    </div>
+<!-- El aviso del ayuno estaba aqui arriba, suelto y lejos del campo de la fecha: el
+     paciente tenia que hacer la cuenta de las 48 h por su cuenta. Ahora va junto a la
+     fecha y con el dia ya calculado (JC, 19-sep). Al quedar sin contenido, la caja se
+     retira en vez de dejarla vacia. -->
     <div class="fld"><label>Nombres y apellidos del paciente <span class="req">*</span></label><input id="nombre" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombre">Ingrese el nombre.</div></div>
     <div class="fld"><label>Cédula o pasaporte <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Ej.: 0912345678"><div class="err" id="e_cedula">Ingrese la cédula o pasaporte.</div></div>
     <div class="fld"><label>Ciudad <span class="req">*</span></label>
@@ -61,6 +61,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
          suelto en el texto de la dirección y se perdía (JC, 19-sep). -->
     <div class="fld"><label>Tipo de vivienda <span class="req">*</span></label>
       <select id="vivienda"><option value="">Seleccione…</option><option>Casa</option><option>Departamento</option><option>Urbanización o conjunto</option></select>
+      <div class="hint">Estos datos le sirven al personal para llegar sin llamarle.</div>
       <div class="err" id="e_vivienda">Seleccione el tipo de vivienda.</div></div>
 
     <div class="fld viv hidden" id="blk_casa"><label>Número de casa <span class="req">*</span></label>
@@ -94,8 +95,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <input type="hidden" id="ef_lat"><input type="hidden" id="ef_lon"></div>
     <div class="fld"><label>Teléfono de contacto <span class="req">*</span></label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"><div class="err" id="e_telefono">Ingrese el teléfono.</div></div>
     <div class="fld"><label>Fecha en que requiere el servicio <span class="req">*</span></label><input id="fecha" type="date">
-      <div class="hint" id="rangoFecha"></div>
       <div class="err" id="e_fecha">Seleccione una fecha dentro del rango permitido.</div></div>
+    <div class="horario" id="rangoFecha"></div>
     <div class="fld"><label>¿Va a aplicar seguro médico? <span class="req">*</span></label>
       <div style="display:flex;gap:8px">
         <button type="button" id="seg_si" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">Sí</button>
@@ -258,8 +259,15 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     var fe=document.getElementById("fecha");
     if(fe){fe.min=F_MIN;fe.max=F_MAX;}
     var r=document.getElementById("rangoFecha");
-    if(r)r.innerHTML="Puede agendar desde el <b>"+_dm(new Date(_h.getTime()+DIA))+
-      "</b> hasta el <b>"+_dm(new Date(_h.getTime()+3*DIA))+"</b>.";
+    // El dia de ayuno es el 3.o: 48 h contadas desde hoy. Se muestra ya calculado para que
+    // el paciente no tenga que sacar la cuenta.
+    if(r)r.innerHTML=
+      '<span class="horario_tit">📅 Agendamiento</span>'+
+      '<span>El servicio a domicilio se agenda hasta <b>3 días</b> después de su solicitud. '+
+      'Puede elegir desde el <b>'+_dm(new Date(_h.getTime()+DIA))+'</b> hasta el <b>'+
+      _dm(new Date(_h.getTime()+3*DIA))+'</b>.</span>'+
+      '<span class="horario_pie">Si su prueba requiere ayuno, elija a partir del '+
+      _dm(new Date(_h.getTime()+2*DIA))+'. Un asesor confirmará la disponibilidad de su visita.</span>';
     var e=document.getElementById("e_fecha");
     if(e)e.textContent="Elija una fecha entre el "+_dm(new Date(_h.getTime()+DIA))+
       " y el "+_dm(new Date(_h.getTime()+3*DIA))+".";
