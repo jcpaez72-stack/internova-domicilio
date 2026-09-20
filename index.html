@@ -35,6 +35,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 .btn:disabled{opacity:.5}
 .foot{font-size:11px;color:var(--sub);text-align:center;margin-top:14px}
 .hidden{display:none !important}
+.tres{display:flex;gap:8px}
+.tres .fld{flex:1;min-width:0}
 #ok{display:none;text-align:center;padding:50px 20px}
 </style>
 </head>
@@ -55,8 +57,33 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <div class="fld"><label>Ciudad <span class="req">*</span></label>
       <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Milagro</option><option>Quevedo</option></select>
       <div class="err" id="e_ciudad">Seleccione la ciudad.</div></div>
-    <div class="fld"><label>Dirección y referencia para la toma <span class="req">*</span></label>
-      <textarea id="direccion" placeholder="Calle principal, número y una referencia (ej.: casa esquinera portón blanco)"></textarea>
+    <!-- Tipo de vivienda: el asesor necesita el número exacto para llegar. Antes todo iba
+         suelto en el texto de la dirección y se perdía (JC, 19-sep). -->
+    <div class="fld"><label>Tipo de vivienda <span class="req">*</span></label>
+      <select id="vivienda"><option value="">Seleccione…</option><option>Casa</option><option>Departamento</option><option>Urbanización o conjunto</option></select>
+      <div class="err" id="e_vivienda">Seleccione el tipo de vivienda.</div></div>
+
+    <div class="fld viv hidden" id="blk_casa"><label>Número de casa <span class="req">*</span></label>
+      <input id="numCasa" placeholder="Ej.: 12 · Mz. 4 solar 7"><div class="err" id="e_numCasa">Indique el número de casa.</div></div>
+
+    <div class="viv hidden" id="blk_depto">
+      <div class="fld"><label>Edificio</label><input id="edificio" placeholder="Ej.: Torres del Río"></div>
+      <div class="fld"><label>Número de departamento <span class="req">*</span></label>
+        <input id="numDepto" placeholder="Ej.: 4B · piso 3"><div class="err" id="e_numDepto">Indique el número de departamento.</div></div>
+    </div>
+
+    <div class="viv hidden" id="blk_urb">
+      <div class="fld"><label>Nombre de la urbanización o conjunto <span class="req">*</span></label>
+        <input id="urbNombre" placeholder="Ej.: Villa Club"><div class="err" id="e_urbNombre">Indique el nombre.</div></div>
+      <div class="tres">
+        <div class="fld"><label>Etapa</label><input id="urbEtapa" placeholder="Ej.: 3"></div>
+        <div class="fld"><label>Manzana <span class="req">*</span></label><input id="urbManzana" placeholder="Ej.: 14"><div class="err" id="e_urbManzana">Falta.</div></div>
+        <div class="fld"><label>Villa <span class="req">*</span></label><input id="urbVilla" placeholder="Ej.: 7"><div class="err" id="e_urbVilla">Falta.</div></div>
+      </div>
+    </div>
+
+    <div class="fld"><label>Calle o avenida y referencia <span class="req">*</span></label>
+      <textarea id="direccion" placeholder="Calle principal, entre qué calles, y una referencia (ej.: portón blanco, frente a la tienda)"></textarea>
       <button type="button" class="mapbtn" id="efBtnMapa" style="margin-top:8px">📍 Seleccionar en el mapa</button>
       <div class="coords" id="coords">Use el mapa para ubicar el punto exacto de la toma.</div>
       <div class="err" id="e_direccion">Ingrese la dirección.</div>
@@ -133,7 +160,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
   function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
-  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",direccion:"Dirección",lat:"Latitud",lon:"Longitud",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",vivienda:"Tipo de vivienda",direccion:"Dirección",lat:"Latitud",lon:"Longitud",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
   // Candado SERVER-SIDE (internova-formlock): bloquea en cualquier dispositivo
   var IN_FLURL="https://internova-formlock.fn.jelou.ai";
@@ -154,19 +181,62 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   }
   document.getElementById("seg_si").addEventListener("click",function(){segPick("Si");});
   document.getElementById("seg_no").addEventListener("click",function(){segPick("No");});
+  // ---- Tipo de vivienda: se muestra solo el bloque que corresponde ----
+  // El asesor recibe UNA sola linea de direccion (asi lo arma F3, que esta sellado), asi que
+  // estos campos se componen aqui y se anteponen a la calle. Nada que cambiar en el flujo.
+  var VIV={"Casa":"blk_casa","Departamento":"blk_depto","Urbanización o conjunto":"blk_urb"};
+  function vivSel(){return val("vivienda");}
+  function pintarVivienda(){
+    var q=VIV[vivSel()];
+    for(var k in VIV){var el=document.getElementById(VIV[k]);if(el)el.classList.toggle("hidden",VIV[k]!==q);}
+  }
+  document.getElementById("vivienda").addEventListener("change",function(){
+    pintarVivienda(); setErr("vivienda",false);
+  });
+  pintarVivienda();
+
+  function domicilioTxt(){
+    var v=vivSel(), p=[];
+    if(v==="Casa"){ if(val("numCasa")) p.push("Casa "+val("numCasa")); }
+    else if(v==="Departamento"){
+      if(val("edificio")) p.push("Edificio "+val("edificio"));
+      if(val("numDepto")) p.push("Departamento "+val("numDepto"));
+    } else if(v==="Urbanización o conjunto"){
+      if(val("urbNombre")) p.push("Urb. "+val("urbNombre"));
+      if(val("urbEtapa")) p.push("etapa "+val("urbEtapa"));
+      if(val("urbManzana")) p.push("Mz. "+val("urbManzana"));
+      if(val("urbVilla")) p.push("villa "+val("urbVilla"));
+    }
+    var cabeza=p.join(", ");
+    var calle=val("direccion");
+    return cabeza ? (cabeza+". "+calle) : calle;
+  }
+
   function payloadDatos(){
     var la=val("ef_lat"),lo=val("ef_lon");
-    return {paciente:val("nombre"),cedula:val("cedula"),ciudad:val("ciudad"),direccion:val("direccion"),
+    return {paciente:val("nombre"),cedula:val("cedula"),ciudad:val("ciudad"),
+      direccion:domicilioTxt(),
+      vivienda:vivSel(),numCasa:val("numCasa"),edificio:val("edificio"),numDepto:val("numDepto"),
+      urbNombre:val("urbNombre"),urbEtapa:val("urbEtapa"),urbManzana:val("urbManzana"),urbVilla:val("urbVilla"),
+      calle:val("direccion"),
       telefono:val("telefono"),fecha:val("fecha"),seguro:segVal,
       lat:la,lon:lo,maps:(la&&lo)?("https://maps.google.com/?q="+la+","+lo):""};
   }
   function validate(){
     var ok=true;
     [["nombre",function(v){return v.length>=3;}],["cedula",function(v){return v.length>=5;}],
-     ["ciudad",function(v){return !!v;}],["direccion",function(v){return v.length>=4;}],
+     ["ciudad",function(v){return !!v;}],["vivienda",function(v){return !!v;}],
+     ["direccion",function(v){return v.length>=4;}],
      ["telefono",function(v){return v.replace(/\D/g,"").length>=7;}],
      ["fecha",function(v){return !!v;}]
     ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
+    // Solo se exigen los campos del tipo de vivienda elegido. La etapa queda opcional:
+    // hay urbanizaciones de una sola etapa y exigirla dejaria al paciente sin poder enviar.
+    var v=vivSel(), req=[];
+    if(v==="Casa") req=["numCasa"];
+    else if(v==="Departamento") req=["numDepto"];
+    else if(v==="Urbanización o conjunto") req=["urbNombre","urbManzana","urbVilla"];
+    req.forEach(function(id){var bad=!val(id);setErr(id,bad);if(bad)ok=false;});
     if(!segVal){setErr("seguro",true);ok=false;}
     return ok;
   }
