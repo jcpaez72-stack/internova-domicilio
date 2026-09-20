@@ -68,8 +68,12 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 
     <div class="viv hidden" id="blk_depto">
       <div class="fld"><label>Edificio</label><input id="edificio" placeholder="Ej.: Torres del Río"></div>
-      <div class="fld"><label>Número de departamento <span class="req">*</span></label>
-        <input id="numDepto" placeholder="Ej.: 4B · piso 3"><div class="err" id="e_numDepto">Indique el número de departamento.</div></div>
+      <div class="tres">
+        <div class="fld"><label>Piso <span class="req">*</span></label>
+          <input id="piso" placeholder="Ej.: 3"><div class="err" id="e_piso">Falta.</div></div>
+        <div class="fld"><label>N.º de departamento <span class="req">*</span></label>
+          <input id="numDepto" placeholder="Ej.: 4B"><div class="err" id="e_numDepto">Falta.</div></div>
+      </div>
     </div>
 
     <div class="viv hidden" id="blk_urb">
@@ -186,9 +190,18 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   // estos campos se componen aqui y se anteponen a la calle. Nada que cambiar en el flujo.
   var VIV={"Casa":"blk_casa","Departamento":"blk_depto","Urbanización o conjunto":"blk_urb"};
   function vivSel(){return val("vivienda");}
+  var VIVCAMPOS={"Casa":["numCasa"],"Departamento":["edificio","piso","numDepto"],
+                 "Urbanización o conjunto":["urbNombre","urbEtapa","urbManzana","urbVilla"]};
   function pintarVivienda(){
-    var q=VIV[vivSel()];
-    for(var k in VIV){var el=document.getElementById(VIV[k]);if(el)el.classList.toggle("hidden",VIV[k]!==q);}
+    var v=vivSel(), q=VIV[v];
+    for(var k in VIV){
+      var el=document.getElementById(VIV[k]);
+      if(el)el.classList.toggle("hidden",VIV[k]!==q);
+      // al cambiar de tipo, los campos del tipo anterior dejan de ser exigibles:
+      // se les quita la marca de error para que no reaparezca en rojo si el
+      // paciente vuelve a esa opcion.
+      if(k!==v)VIVCAMPOS[k].forEach(function(id){setErr(id,false);});
+    }
   }
   document.getElementById("vivienda").addEventListener("change",function(){
     pintarVivienda(); setErr("vivienda",false);
@@ -200,7 +213,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     if(v==="Casa"){ if(val("numCasa")) p.push("Casa "+val("numCasa")); }
     else if(v==="Departamento"){
       if(val("edificio")) p.push("Edificio "+val("edificio"));
-      if(val("numDepto")) p.push("Departamento "+val("numDepto"));
+      if(val("piso")) p.push("piso "+val("piso"));
+      if(val("numDepto")) p.push("departamento "+val("numDepto"));
     } else if(v==="Urbanización o conjunto"){
       if(val("urbNombre")) p.push("Urb. "+val("urbNombre"));
       if(val("urbEtapa")) p.push("etapa "+val("urbEtapa"));
@@ -216,7 +230,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     var la=val("ef_lat"),lo=val("ef_lon");
     return {paciente:val("nombre"),cedula:val("cedula"),ciudad:val("ciudad"),
       direccion:domicilioTxt(),
-      vivienda:vivSel(),numCasa:val("numCasa"),edificio:val("edificio"),numDepto:val("numDepto"),
+      vivienda:vivSel(),numCasa:val("numCasa"),edificio:val("edificio"),piso:val("piso"),numDepto:val("numDepto"),
       urbNombre:val("urbNombre"),urbEtapa:val("urbEtapa"),urbManzana:val("urbManzana"),urbVilla:val("urbVilla"),
       calle:val("direccion"),
       telefono:val("telefono"),fecha:val("fecha"),seguro:segVal,
@@ -234,7 +248,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     // hay urbanizaciones de una sola etapa y exigirla dejaria al paciente sin poder enviar.
     var v=vivSel(), req=[];
     if(v==="Casa") req=["numCasa"];
-    else if(v==="Departamento") req=["numDepto"];
+    else if(v==="Departamento") req=["piso","numDepto"];
     else if(v==="Urbanización o conjunto") req=["urbNombre","urbManzana","urbVilla"];
     req.forEach(function(id){var bad=!val(id);setErr(id,bad);if(bad)ok=false;});
     if(!segVal){setErr("seguro",true);ok=false;}
