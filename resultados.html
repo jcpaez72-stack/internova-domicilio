@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>INTERLAB · Consulta de Resultados</title>
+<style>
+:root{--wa:#075e54;--wa2:#128c7e;--ink:#111b21;--sub:#667781;--line:#d1d7db;--bg:#f0f2f5;
+ --amber:#8a5a00;--amberbg:#fff8e6;--amberbd:#ffe08a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+ background:var(--bg);color:var(--ink);line-height:1.45;display:flex;flex-direction:column}
+.head{background:linear-gradient(135deg,var(--wa),var(--wa2));color:#fff;padding:14px 18px;
+ display:flex;align-items:center;gap:12px;flex:0 0 auto}
+.head .av{width:38px;height:38px;border-radius:50%;background:#fff;display:flex;align-items:center;
+ justify-content:center;font-size:19px}
+.head h1{margin:0;font-size:16px}.head p{margin:1px 0 0;font-size:12px;opacity:.9}
+.aviso{background:var(--amberbg);border-bottom:1px solid var(--amberbd);color:var(--amber);
+ padding:10px 18px;font-size:12.5px;flex:0 0 auto}
+#marco{flex:1 1 auto;width:100%;border:0;display:block;background:#fff;min-height:320px}
+.pie{background:#fff;border-top:1px solid var(--line);padding:10px 14px;flex:0 0 auto}
+.btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:14px;
+ font-size:15.5px;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.55}
+.legal{font-size:11px;color:var(--sub);text-align:center;margin-top:9px}
+#caida{display:none;padding:26px 20px;text-align:center;flex:1 1 auto;background:#fff}
+#caida h2{font-size:16px;margin:0 0 8px}
+#caida p{font-size:13.5px;color:var(--sub);margin:0 0 16px}
+#caida a{display:inline-block;word-break:break-all;color:var(--wa2);font-weight:600;font-size:14px}
+#fin{display:none;text-align:center;padding:56px 22px;flex:1 1 auto;background:#fff}
+#fin .tick{font-size:42px}
+#fin h2{font-size:17px;margin:10px 0 6px}
+#fin p{font-size:13.5px;color:var(--sub);margin:0}
+.oculto{display:none !important}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <div class="av">🔬</div>
+  <div><h1>Consulta de Resultados</h1><p>INTERLAB · Laboratorio Clínico</p></div>
+</div>
+
+<div class="aviso" id="aviso">
+  Ingrese su <b>número de orden</b> y su <b>clave de acceso</b>, marque la casilla de verificación
+  y descargue su informe. Al terminar, toque <b>Volver al chat</b>.
+</div>
+
+<iframe id="marco"
+  referrerpolicy="no-referrer-when-downgrade"
+  allow="clipboard-write"
+  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"></iframe>
+
+<div id="caida">
+  <h2>No pudimos abrir el portal aquí</h2>
+  <p>Puede consultarlo directamente en su navegador con el siguiente enlace:</p>
+  <a id="crudo" href="#" target="_blank" rel="noopener"></a>
+</div>
+
+<div id="fin">
+  <div class="tick">✅</div>
+  <h2>Listo</h2>
+  <p>Puede cerrar esta ventana y continuar en el chat.</p>
+</div>
+
+<div class="pie" id="pie">
+  <button class="btn" id="listo">Volver al chat</button>
+  <div class="legal">Sus resultados son confidenciales. INTERNOVA no los almacena ni los consulta por usted.</div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ── Parámetros que manda el flujo ────────────────────────────────────────
+     p            portal a mostrar, URL-encodeada por el nodo CODE del flujo
+     executionId  lo inyecta la plataforma; sin él no se puede avisar al flujo
+     callback     opcional; por defecto la función internova-callback          */
+  var qs = new URLSearchParams(location.search);
+  var DEFAULT_CALLBACK = "https://internova-callback.fn.jelou.ai";
+  var executionId = qs.get("executionId") || "";
+  var callback    = qs.get("callback") || DEFAULT_CALLBACK;
+  if(!executionId){ var m = location.href.match(/[?&]executionId=([^&#]+)/); if(m) executionId = decodeURIComponent(m[1]); }
+  if(callback.indexOf("executionId=") >= 0){
+    var cm = callback.match(/^(.*?)[?&]executionId=([^&#]+)(.*)$/);
+    if(cm){ if(!executionId) executionId = decodeURIComponent(cm[2]); callback = cm[1]; }
+  }
+
+  /* ── Lista blanca ─────────────────────────────────────────────────────────
+     Solo se acepta un portal de resultados de INTERLAB. Sin esto, cualquiera
+     podría usar esta página para enmarcar un sitio ajeno con la cara de
+     INTERLAB. Si el parámetro no cumple, se cae a Guayaquil.                  */
+  var PERMITIDO = /^https:\/\/resultados(gye|por|man|mac|mgr|qdo)\.interlab\.com\.ec\//i;
+  var RESPALDO  = "https://resultadosgye.interlab.com.ec/";
+  var portal    = RESPALDO;
+  try{
+    var p = qs.get("p") || "";
+    if(p){ var d = decodeURIComponent(p); if(PERMITIDO.test(d)) portal = d; }
+  }catch(e){}
+
+  var marco  = document.getElementById("marco");
+  var caida  = document.getElementById("caida");
+  var aviso  = document.getElementById("aviso");
+  var pie    = document.getElementById("pie");
+  var fin    = document.getElementById("fin");
+  var btn    = document.getElementById("listo");
+  var cargo  = false;
+
+  document.getElementById("crudo").href        = portal;
+  document.getElementById("crudo").textContent = portal;
+
+  marco.addEventListener("load", function(){ cargo = true; });
+  marco.src = portal;
+
+  /* Si el portal no monta, el paciente no se queda mirando un recuadro blanco:
+     se le muestra el enlace para abrirlo por fuera. */
+  setTimeout(function(){
+    if(cargo) return;
+    marco.classList.add("oculto");
+    aviso.classList.add("oculto");
+    caida.style.display = "block";
+  }, 12000);
+
+  /* ── Volver al chat ───────────────────────────────────────────────────────
+     Avisa al flujo por la rama «exit». No viaja ningún dato del paciente:
+     solo la marca de que terminó de consultar.                                */
+  var enviado = false;
+  btn.addEventListener("click", function(){
+    if(enviado) return;
+    enviado = true;
+    btn.disabled = true;
+    btn.textContent = "Un momento…";
+
+    function cerrar(){
+      marco.classList.add("oculto");
+      aviso.classList.add("oculto");
+      caida.style.display = "none";
+      pie.classList.add("oculto");
+      fin.style.display = "block";
+      try{ window.close(); }catch(e){}
+    }
+
+    if(!executionId){ cerrar(); return; }
+
+    var corta = setTimeout(cerrar, 6000);
+    try{
+      fetch(callback, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ executionId: executionId, success: true, visto: true })
+      }).then(function(){ clearTimeout(corta); cerrar(); })
+        .catch(function(){ clearTimeout(corta); cerrar(); });
+    }catch(e){ clearTimeout(corta); cerrar(); }
+  });
+})();
+</script>
+
+</body>
+</html>
