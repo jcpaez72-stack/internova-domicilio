@@ -28,6 +28,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
  font-size:15px;font-weight:700;cursor:pointer}
 .btn:disabled{opacity:.55}
 .legal{font-size:10.5px;color:var(--sub);text-align:center;margin-top:6px;line-height:1.3}
+.salida{display:block;text-align:center;font-size:13px;font-weight:600;color:var(--wa2);
+ text-decoration:none;padding:9px 6px;margin-bottom:4px;border:1px solid var(--line);
+ border-radius:12px;background:#fff}
 #caida{display:none;padding:26px 20px;text-align:center;flex:1 1 auto;background:#fff}
 #caida h2{font-size:16px;margin:0 0 8px}
 #caida p{font-size:13.5px;color:var(--sub);margin:0 0 16px}
@@ -50,10 +53,12 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   Ingrese su <b>número de orden</b> y su <b>clave</b>. Al terminar, toque <b>Volver al chat</b>.
 </div>
 
+<!-- Sin atributo «sandbox» a proposito: solo se enmarcan subdominios de INTERLAB
+     (lista blanca mas abajo), y el sandbox no aporta seguridad aqui pero si puede
+     estorbar a la descarga del PDF. -->
 <iframe id="marco"
   referrerpolicy="no-referrer-when-downgrade"
-  allow="clipboard-write"
-  sandbox="allow-forms allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox allow-downloads allow-modals"></iframe>
+  allow="clipboard-write"></iframe>
 
 <div id="caida">
   <h2>No pudimos abrir el portal aquí</h2>
@@ -68,6 +73,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 </div>
 
 <div class="pie" id="pie">
+  <a class="salida" id="salida" href="#" target="_blank" rel="noopener">
+    ¿No pudo descargar el PDF? Ábralo en su navegador ↗
+  </a>
   <button class="btn" id="listo">Volver al chat</button>
   <div class="legal">Sus resultados son confidenciales. INTERNOVA no los almacena ni los consulta por usted.</div>
 </div>
@@ -112,6 +120,11 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 
   document.getElementById("crudo").href        = portal;
   document.getElementById("crudo").textContent = portal;
+  /* 22-sep: el navegador que WhatsApp abre dentro de la app no tiene carpeta de
+     descargas, asi que al tocar «descargar» el PDF se pierde en silencio (probado
+     por JC en Guayaquil). Esta salida lleva el portal al navegador de verdad, que
+     es donde la descarga si funciona. */
+  document.getElementById("salida").href = portal;
 
   marco.addEventListener("load", function(){ cargo = true; });
   marco.src = portal;
