@@ -22,7 +22,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 .head p{margin:0;font-size:11px;opacity:.9;line-height:1.2}
 .aviso{background:var(--amberbg);border-bottom:1px solid var(--amberbd);color:var(--amber);
  padding:7px 16px;font-size:12px;line-height:1.35;flex:0 0 auto}
-#marco{flex:1 1 auto;width:100%;border:0;display:block;background:#fff;min-height:320px}
+#ranura{flex:1 1 auto;display:flex;min-height:320px}
+#marco{flex:1 1 auto;width:100%;border:0;display:block;background:#fff}
 .pie{background:#fff;border-top:1px solid var(--line);padding:8px 14px;flex:0 0 auto}
 .btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:12px;
  font-size:15px;font-weight:700;cursor:pointer}
@@ -53,12 +54,14 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   Ingrese su <b>número de orden</b> y su <b>clave</b>. Al terminar, toque <b>Volver al chat</b>.
 </div>
 
-<!-- Sin atributo «sandbox» a proposito: solo se enmarcan subdominios de INTERLAB
-     (lista blanca mas abajo), y el sandbox no aporta seguridad aqui pero si puede
-     estorbar a la descarga del PDF. -->
-<iframe id="marco"
-  referrerpolicy="no-referrer-when-downgrade"
-  allow="clipboard-write"></iframe>
+<!-- ⛔ NO TOCAR LOS ATRIBUTOS DEL MARCO.
+     Son EXACTAMENTE los de «prueba-embed-resultados.html», que es la version
+     con la que JC si logro descargar el PDF el 21-sep. «allow-downloads» y
+     «allow-popups-to-escape-sandbox» son los dos que habilitan la descarga
+     dentro de un iframe; quitarlos, o quitar el sandbox entero, la rompe.
+     El marco se crea desde JS con el src YA puesto, para que el navegador lo
+     lea igual que si estuviera escrito en el HTML. -->
+<div id="ranura"></div>
 
 <div id="caida">
   <h2>No pudimos abrir el portal aquí</h2>
@@ -110,6 +113,17 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     if(p){ var d = decodeURIComponent(p); if(PERMITIDO.test(d)) portal = d; }
   }catch(e){}
 
+  /* El marco se arma con innerHTML, con src y sandbox ya escritos, para que el
+     navegador lo analice igual que el de la pagina de prueba que si descargo. */
+  var ranura = document.getElementById("ranura");
+  ranura.innerHTML =
+    '<iframe id="marco" class="marco"' +
+    ' src="' + portal.replace(/"/g, "&quot;") + '"' +
+    ' referrerpolicy="no-referrer-when-downgrade"' +
+    ' allow="clipboard-write"' +
+    ' sandbox="allow-forms allow-scripts allow-same-origin allow-popups' +
+    ' allow-popups-to-escape-sandbox allow-downloads allow-modals"></iframe>';
+
   var marco  = document.getElementById("marco");
   var caida  = document.getElementById("caida");
   var aviso  = document.getElementById("aviso");
@@ -127,13 +141,12 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   document.getElementById("salida").href = portal;
 
   marco.addEventListener("load", function(){ cargo = true; });
-  marco.src = portal;
 
   /* Si el portal no monta, el paciente no se queda mirando un recuadro blanco:
      se le muestra el enlace para abrirlo por fuera. */
   setTimeout(function(){
     if(cargo) return;
-    marco.classList.add("oculto");
+    ranura.classList.add("oculto");
     aviso.classList.add("oculto");
     caida.style.display = "block";
   }, 12000);
@@ -149,7 +162,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     btn.textContent = "Un momento…";
 
     function cerrar(){
-      marco.classList.add("oculto");
+      ranura.classList.add("oculto");
       aviso.classList.add("oculto");
       caida.style.display = "none";
       pie.classList.add("oculto");
