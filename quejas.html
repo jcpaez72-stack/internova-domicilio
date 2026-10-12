@@ -46,7 +46,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     </div>
 
     <div class="fld"><label>Ciudad donde ocurrió <span class="req">*</span></label>
-      <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Milagro</option><option>Quevedo</option></select>
+      <!-- 12-oct (JC): las mismas 10 opciones del menú del bot. Samborondón y Vía Daule o Vía Salitre son sectores de
+           Guayaquil: el formulario devuelve ciudad=Guayaquil + sector (el caso se registra con ciudad Guayaquil). -->
+      <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Samborondón</option><option>Vía Daule o Vía Salitre</option><option>Milagro</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Quevedo</option></select>
       <div class="err" id="e_ciudad">Seleccione la ciudad.</div></div>
 
     <div class="fld"><label>¿El inconveniente está relacionado con un paciente atendido? <span class="req">*</span></label>
@@ -91,6 +93,10 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
   // Ciudad prellenada desde el bot (?c=)
   var C=(qs.get("c")||"").trim();
+  // 12-oct: el sector llega como código corto ("s"); si viene, se preselecciona el sector en vez de «Guayaquil».
+  var SECTOR_COD={sam:"Samborondón",vds:"Vía Daule o Vía Salitre"};
+  var SEC=SECTOR_COD[(qs.get("s")||"").trim().toLowerCase()]||"";
+  if(SEC&&C.toLowerCase()==="guayaquil")C=SEC;
   if(C){var sel=document.getElementById("ciudad");for(var i=0;i<sel.options.length;i++){if(sel.options[i].value.toLowerCase()===C.toLowerCase()){sel.selectedIndex=i;break;}}}
   // ---- Bloqueo / solo-lectura (mismo patrón que cotizacion.html) ----
   var LK=(qs.get("n")||"");
@@ -100,7 +106,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
   function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
-  function showLocked(){var d=lockedRec()||{};var rows="";var L={ciudad:"Ciudad",nombres:"Paciente",cedula:"Cédula",orden:"Orden",fechaExamen:"Fecha del examen",lugar:"Lugar",fechaEvento:"Fecha del evento",descripcion:"Descripción",telefono:"Teléfono",correo:"Correo"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Caso registrado</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={ciudad:"Ciudad",sector:"Sector",nombres:"Paciente",cedula:"Cédula",orden:"Orden",fechaExamen:"Fecha del examen",lugar:"Lugar",fechaEvento:"Fecha del evento",descripcion:"Descripción",telefono:"Teléfono",correo:"Correo"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Caso registrado</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
   // Candado SERVER-SIDE (internova-formlock)
   var IN_FLURL="https://internova-formlock.fn.jelou.ai";
@@ -118,8 +124,11 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 
   function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
+  // 12-oct: los sectores se devuelven como ciudad=Guayaquil + sector.
+  var SECTORES_GYE={"Samborondón":1,"Vía Daule o Vía Salitre":1};
   function payloadDatos(){
-    return {ciudad:val("ciudad"),hayPaciente:hay,nombres:hay==="Si"?val("nombres"):"",cedula:hay==="Si"?val("cedula"):"",orden:hay==="Si"?val("orden"):"",fechaExamen:hay==="Si"?val("fechaExamen"):"",
+    var cs=val("ciudad"),esSec=!!SECTORES_GYE[cs];
+    return {ciudad:esSec?"Guayaquil":cs,sector:esSec?cs:"",hayPaciente:hay,nombres:hay==="Si"?val("nombres"):"",cedula:hay==="Si"?val("cedula"):"",orden:hay==="Si"?val("orden"):"",fechaExamen:hay==="Si"?val("fechaExamen"):"",
             lugar:val("lugar"),fechaEvento:val("fechaEvento"),descripcion:val("descripcion"),telefono:val("telefono"),correo:val("correo")};
   }
   function validate(){
