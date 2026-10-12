@@ -39,9 +39,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 </head>
 <body>
 <div class="wrap">
-  <div class="head"><div class="av">📝</div><div><h1>Quejas y Reclamos</h1><p>INTERLAB · Laboratorio Clínico</p></div></div>
+  <div class="head"><div class="av">📝</div><div><h1 id="tit">Quejas y Reclamos</h1><p>INTERLAB · Laboratorio Clínico</p></div></div>
   <div class="body" id="scr_datos">
-    <div class="pre">
+    <div class="pre" id="pre">
       Lamentamos la molestia. Complete este formulario para <b>registrar su caso</b>; el equipo correspondiente lo revisará y le dará seguimiento.
     </div>
 
@@ -54,10 +54,10 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <!-- 12-oct (planilla 1-oct, fila 285): los 5 datos. «¿Hubo paciente?», cédula, orden y fecha del examen NO APLICAN (filas 286 y 289). -->
     <div class="fld"><label>Nombres completos del paciente o cliente <span class="req">*</span></label><input id="nombres" placeholder="Nombres y apellidos"><div class="err" id="e_nombres">Ingrese los nombres completos.</div></div>
 
-    <div class="sec">Sobre lo ocurrido</div>
-    <div class="fld"><label>Punto de atención donde ocurrió el evento <span class="req">*</span></label><input id="lugar" placeholder="Sede, teléfono, página web, servicio a domicilio…"><div class="err" id="e_lugar">Indique el lugar.</div></div>
-    <div class="fld"><label>Fecha de atención (si aplica)</label><input id="fechaEvento" type="date"></div>
-    <div class="fld"><label>Descripción de lo ocurrido <span class="req">*</span></label>
+    <div class="sec" id="secOcurrido">Sobre lo ocurrido</div>
+    <div class="fld" id="fldLugar"><label>Punto de atención donde ocurrió el evento <span class="req">*</span></label><input id="lugar" placeholder="Sede, teléfono, página web, servicio a domicilio…"><div class="err" id="e_lugar">Indique el lugar.</div></div>
+    <div class="fld" id="fldFecha"><label>Fecha de atención (si aplica)</label><input id="fechaEvento" type="date"></div>
+    <div class="fld"><label id="lblDesc">Descripción de lo ocurrido <span class="req">*</span></label>
       <textarea id="descripcion" placeholder="Cuéntenos brevemente qué ocurrió y cualquier detalle que considere importante."></textarea>
       <div class="err" id="e_descripcion">Describa lo ocurrido (mínimo 10 caracteres).</div></div>
 
@@ -84,6 +84,19 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   if(!executionId){var m=location.href.match(/[?&]executionId=([^&#]+)/);if(m)executionId=decodeURIComponent(m[1]);}
   if(callback.indexOf("executionId=")>=0){var cm=callback.match(/^(.*?)[?&]executionId=([^&#]+)(.*)$/);if(cm){if(!executionId)executionId=decodeURIComponent(cm[2]);callback=cm[1];}}
   var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
+  // 12-oct (JC, ficha Consultas y sugerencias): el mismo formulario sirve para «Consultas o Sugerencias» con f=consulta.
+  // Planilla fila 295: formulario + registro con número. Sin punto de atención ni fecha (son de quejas).
+  var MODO=((qs.get("f")||"").toLowerCase()==="consulta")?"consulta":"queja";
+  if(MODO==="consulta"){
+    document.title="INTERLAB · Consultas y Sugerencias";
+    document.getElementById("tit").textContent="Consultas y Sugerencias";
+    document.getElementById("pre").innerHTML="Complete este formulario con su <b>consulta o sugerencia</b> y la enviaremos al equipo correspondiente.";
+    ["secOcurrido","fldLugar","fldFecha"].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.add("hidden");});
+    document.getElementById("lblDesc").innerHTML="Su consulta o sugerencia <span class=\"req\">*</span>";
+    var _d=document.getElementById("descripcion");if(_d)_d.placeholder="Escriba aquí su consulta o sugerencia.";
+    var _ed=document.getElementById("e_descripcion");if(_ed)_ed.textContent="Escriba su consulta o sugerencia (mínimo 10 caracteres).";
+    var _b=document.getElementById("btn");if(_b)_b.textContent="Enviar mi consulta →";
+  }
   // Ciudad prellenada desde el bot (?c=)
   var C=(qs.get("c")||"").trim();
   // 12-oct: el sector llega como código corto ("s"); si viene, se preselecciona el sector en vez de «Guayaquil».
@@ -114,14 +127,15 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   var SECTORES_GYE={"Samborondón":1,"Vía Daule o Vía Salitre":1};
   function payloadDatos(){
     var cs=val("ciudad"),esSec=!!SECTORES_GYE[cs];
-    return {ciudad:esSec?"Guayaquil":cs,sector:esSec?cs:"",nombres:val("nombres"),
+    return {tipo:MODO,ciudad:esSec?"Guayaquil":cs,sector:esSec?cs:"",nombres:val("nombres"),
             lugar:val("lugar"),fechaEvento:val("fechaEvento"),descripcion:val("descripcion"),telefono:val("telefono"),correo:val("correo")};
   }
   function validate(){
     var ok=true;
-    var rules=[["ciudad",function(v){return v.length>0;}],["lugar",function(v){return v.length>=2;}],["descripcion",function(v){return v.length>=10;}],
+    var rules=[["ciudad",function(v){return v.length>0;}],["descripcion",function(v){return v.length>=10;}],
                ["correo",function(v){return !v||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}]];
     rules.push(["nombres",function(v){return v.length>=3;}]);
+    if(MODO==="queja")rules.push(["lugar",function(v){return v.length>=2;}]);
     rules.forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
     // Fila 285: «Correo electrónico o teléfono de contacto» → al menos uno.
     var sinContacto=!val("correo")&&val("telefono").replace(/\D/g,"").length<7;
