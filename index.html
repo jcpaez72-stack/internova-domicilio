@@ -55,7 +55,10 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <div class="fld"><label>Nombres y apellidos del paciente <span class="req">*</span></label><input id="nombre" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombre">Ingrese el nombre.</div></div>
     <div class="fld"><label>Cédula o pasaporte <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Ej.: 0912345678"><div class="err" id="e_cedula">Ingrese la cédula o pasaporte.</div></div>
     <div class="fld"><label>Ciudad <span class="req">*</span></label>
-      <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Milagro</option><option>Quevedo</option></select>
+      <!-- 12-oct (JC): las mismas 10 opciones del menú del bot (provincia → ciudad o sector).
+           Samborondón y Vía Daule o Vía Salitre son sectores de Guayaquil: el formulario devuelve
+           ciudad=Guayaquil + sector, para que el asesor de Guayaquil siga recibiéndolos. -->
+      <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Samborondón</option><option>Vía Daule o Vía Salitre</option><option>Milagro</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Quevedo</option></select>
       <div class="err" id="e_ciudad">Seleccione la ciudad.</div></div>
     <!-- Tipo de vivienda: el asesor necesita el número exacto para llegar. Antes todo iba
          suelto en el texto de la dirección y se perdía (JC, 19-sep). -->
@@ -148,6 +151,11 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   // El bot ya preguntó la ciudad (regla: se pide UNA sola vez). Llega por querystring, se
   // preselecciona y se bloquea para que no pueda contradecir lo que el cliente ya eligió.
   var CIUDAD_CHAT=(qs.get("c")||"").trim();
+  // 12-oct (JC): el sector llega como código corto ("s"), porque el bot no garantiza cómo
+  // codifica espacios y tildes en la URL. Si viene, se marca el sector en vez de «Guayaquil».
+  var SECTOR_COD={sam:"Samborondón",vds:"Vía Daule o Vía Salitre"};
+  var SECTOR_CHAT=SECTOR_COD[(qs.get("s")||"").trim().toLowerCase()]||"";
+  if(SECTOR_CHAT&&CIUDAD_CHAT.toLowerCase()==="guayaquil")CIUDAD_CHAT=SECTOR_CHAT;
   window._ciudadFija=false;
   if(CIUDAD_CHAT){
     var _sel=document.getElementById("ciudad");
@@ -167,7 +175,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
   function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
-  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",vivienda:"Tipo de vivienda",direccion:"Dirección",lat:"Latitud",lon:"Longitud",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",sector:"Sector",vivienda:"Tipo de vivienda",direccion:"Dirección",lat:"Latitud",lon:"Longitud",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
   // Candado SERVER-SIDE (internova-formlock): bloquea en cualquier dispositivo
   var IN_FLURL="https://internova-formlock.fn.jelou.ai";
@@ -229,9 +237,11 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     return cabeza ? (cabeza+". "+calle) : calle;
   }
 
+  // 12-oct: los sectores se devuelven como ciudad=Guayaquil + sector (el bot enruta por ciudad).
+  var SECTORES_GYE={"Samborondón":1,"Vía Daule o Vía Salitre":1};
   function payloadDatos(){
-    var la=val("ef_lat"),lo=val("ef_lon");
-    return {paciente:val("nombre"),cedula:val("cedula"),ciudad:val("ciudad"),
+    var la=val("ef_lat"),lo=val("ef_lon"),cs=val("ciudad"),esSec=!!SECTORES_GYE[cs];
+    return {paciente:val("nombre"),cedula:val("cedula"),ciudad:esSec?"Guayaquil":cs,sector:esSec?cs:"",
       direccion:domicilioTxt(),
       vivienda:vivSel(),numCasa:val("numCasa"),edificio:val("edificio"),piso:val("piso"),numDepto:val("numDepto"),
       urbNombre:val("urbNombre"),urbEtapa:val("urbEtapa"),urbManzana:val("urbManzana"),urbVilla:val("urbVilla"),
@@ -357,13 +367,21 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   var modal=document.getElementById('efMapModal'),map=null,geoT=null,srchT=null;
   var FN='https://enviafacil-geocode.fn.jelou.ai';
   var DEF=[-2.170998,-79.922359]; // Guayaquil (la geolocalización lo recentra)
+  // 12-oct (JC): el mapa abre en la sede principal de la ciudad elegida, no siempre en Guayaquil.
+  // Coordenadas de los enlaces de mapa de las sedes de InterLAB (herramienta horariossucursal).
+  // Vía Daule o Vía Salitre: sin enlace confiable → Matriz de Guayaquil (decisión JC, P1 A).
+  var CENTRO={"guayaquil":[-2.1633338,-79.8970287],"vía daule o vía salitre":[-2.1633338,-79.8970287],
+    "samborondón":[-2.0733813,-79.8357459],"milagro":[-2.1299163,-79.5896268],"quito":[-0.1685089,-78.4796297],
+    "cuenca":[-2.9047982,-79.0087576],"portoviejo":[-1.0471313,-80.4824491],"manta":[-0.9536488,-80.7410513],
+    "machala":[-3.2638975,-79.9447674],"quevedo":[-1.0381657,-79.477164]};
+  function centroCiudad(){var s=document.getElementById('ciudad');var v=s?(s.value||'').toLowerCase():'';return CENTRO[v]||DEF;}
   function newSess(){return 'iv-'+Date.now()+'-'+Math.floor(Math.random()*1e6);}
   var sess=newSess();
   function setV(id,v){var el=document.getElementById(id);if(el&&v)el.value=v;}
   function openM(){
     modal.classList.remove('hidden');
     if(!map){
-      map=L.map('efLeaf',{zoomControl:false}).setView(DEF,15);L.control.zoom({position:'topright'}).addTo(map);
+      map=L.map('efLeaf',{zoomControl:false}).setView(centroCiudad(),15);L.control.zoom({position:'topright'}).addTo(map);
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
       map.on('moveend',onMove);
       tryLoc();
