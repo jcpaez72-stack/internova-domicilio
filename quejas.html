@@ -51,28 +51,21 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Samborondón</option><option>Vía Daule o Vía Salitre</option><option>Milagro</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Quevedo</option></select>
       <div class="err" id="e_ciudad">Seleccione la ciudad.</div></div>
 
-    <div class="fld"><label>¿El inconveniente está relacionado con un paciente atendido? <span class="req">*</span></label>
-      <div class="seg"><button type="button" id="pac_si">Sí, hubo paciente</button><button type="button" id="pac_no">No</button></div>
-      <div class="err" id="e_hayPaciente">Indique si hubo un paciente atendido.</div></div>
-
-    <div id="blk_pac" class="hidden">
-      <div class="sec">Datos del paciente atendido</div>
-      <div class="fld"><label>Nombres completos del paciente <span class="req">*</span></label><input id="nombres" placeholder="Nombres y apellidos del paciente (no de quien escribe, si son distintos)"><div class="err" id="e_nombres">Ingrese el nombre del paciente.</div></div>
-      <div class="fld"><label>Número de cédula del paciente <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Cédula (10 dígitos) o pasaporte"><div class="err" id="e_cedula">Ingrese la cédula.</div></div>
-      <div class="fld"><label>Número de orden</label><input id="orden" placeholder="Si lo tiene (opcional)"></div>
-      <div class="fld"><label>Fecha en la que se realizó el examen</label><input id="fechaExamen" type="date"><div class="hint">Si no la recuerda con exactitud, indique una fecha aproximada.</div></div>
-    </div>
+    <!-- 12-oct (planilla 1-oct, fila 285): los 5 datos. «¿Hubo paciente?», cédula, orden y fecha del examen NO APLICAN (filas 286 y 289). -->
+    <div class="fld"><label>Nombres completos del paciente o cliente <span class="req">*</span></label><input id="nombres" placeholder="Nombres y apellidos"><div class="err" id="e_nombres">Ingrese los nombres completos.</div></div>
 
     <div class="sec">Sobre lo ocurrido</div>
     <div class="fld"><label>Punto de atención donde ocurrió el evento <span class="req">*</span></label><input id="lugar" placeholder="Sede, teléfono, página web, servicio a domicilio…"><div class="err" id="e_lugar">Indique el lugar.</div></div>
-    <div class="fld"><label>Fecha en la que ocurrió la situación <span class="req">*</span></label><input id="fechaEvento" type="date"><div class="err" id="e_fechaEvento">Indique la fecha (puede ser aproximada).</div></div>
+    <div class="fld"><label>Fecha de atención (si aplica)</label><input id="fechaEvento" type="date"></div>
     <div class="fld"><label>Descripción de lo ocurrido <span class="req">*</span></label>
       <textarea id="descripcion" placeholder="Cuéntenos brevemente qué ocurrió y cualquier detalle que considere importante."></textarea>
       <div class="err" id="e_descripcion">Describa lo ocurrido (mínimo 10 caracteres).</div></div>
 
     <div class="sec">Para darle seguimiento</div>
-    <div class="fld"><label>Teléfono de contacto</label><input id="telefono" inputmode="tel" placeholder="Opcional, si prefiere que le llamen a otro número"></div>
-    <div class="fld"><label>Correo electrónico</label><input id="correo" inputmode="email" placeholder="Opcional"><div class="err" id="e_correo">Revise el correo (ej.: nombre@dominio.com).</div></div>
+    <div class="hint" style="margin:-4px 0 10px">Indique al menos un correo o un teléfono. <span class="req">*</span></div>
+    <div class="fld"><label>Teléfono de contacto</label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"></div>
+    <div class="fld"><label>Correo electrónico</label><input id="correo" inputmode="email" placeholder="Ej.: nombre@dominio.com"><div class="err" id="e_correo">Revise el correo (ej.: nombre@dominio.com).</div>
+      <div class="err" id="e_contacto">Indique un correo o un teléfono para darle seguimiento.</div></div>
 
     <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
     <button class="btn" id="btn" type="button">Registrar mi caso →</button>
@@ -115,29 +108,25 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function inSrvCheck(){if(!executionId||!qs.get("n"))return;if(isLocked())return;var _v=document.createElement("div");_v.style.cssText="position:fixed;inset:0;background:#fff;z-index:9999;display:flex;align-items:center;justify-content:center;font:600 15px system-ui,-apple-system,sans-serif;color:#6b6b6b";_v.textContent="Verificando…";document.body.appendChild(_v);var _q=function(){if(_v&&_v.parentNode)_v.remove();};var _to=setTimeout(_q,4000);try{fetch(IN_FLURL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({accion:"consultar",exec:executionId,form:inFormId()})}).then(function(r){return r.json();}).then(function(o){clearTimeout(_to);_q();if(o&&o.ok&&o.enviado){lock(o.datos||{});showLocked();}}).catch(function(){clearTimeout(_to);_q();});}catch(e){clearTimeout(_to);_q();}}
   inSrvCheck();
 
-  // ¿Hubo paciente? (segmentado)
-  var hay="";
-  var bSi=document.getElementById("pac_si"),bNo=document.getElementById("pac_no"),blk=document.getElementById("blk_pac");
-  function setHay(v){hay=v;bSi.classList.toggle("on",v==="Si");bNo.classList.toggle("on",v==="No");blk.classList.toggle("hidden",v!=="Si");setErr("hayPaciente",false);}
-  bSi.addEventListener("click",function(){setHay("Si");});
-  bNo.addEventListener("click",function(){setHay("No");});
-
   function val(id){var el=document.getElementById(id);return el?el.value.trim():"";}
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
   // 12-oct: los sectores se devuelven como ciudad=Guayaquil + sector.
   var SECTORES_GYE={"Samborondón":1,"Vía Daule o Vía Salitre":1};
   function payloadDatos(){
     var cs=val("ciudad"),esSec=!!SECTORES_GYE[cs];
-    return {ciudad:esSec?"Guayaquil":cs,sector:esSec?cs:"",hayPaciente:hay,nombres:hay==="Si"?val("nombres"):"",cedula:hay==="Si"?val("cedula"):"",orden:hay==="Si"?val("orden"):"",fechaExamen:hay==="Si"?val("fechaExamen"):"",
+    return {ciudad:esSec?"Guayaquil":cs,sector:esSec?cs:"",nombres:val("nombres"),
             lugar:val("lugar"),fechaEvento:val("fechaEvento"),descripcion:val("descripcion"),telefono:val("telefono"),correo:val("correo")};
   }
   function validate(){
     var ok=true;
-    var rules=[["ciudad",function(v){return v.length>0;}],["lugar",function(v){return v.length>=2;}],["fechaEvento",function(v){return v.length>0;}],["descripcion",function(v){return v.length>=10;}],
+    var rules=[["ciudad",function(v){return v.length>0;}],["lugar",function(v){return v.length>=2;}],["descripcion",function(v){return v.length>=10;}],
                ["correo",function(v){return !v||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}]];
-    if(hay==="Si"){rules.push(["nombres",function(v){return v.length>=3;}]);rules.push(["cedula",function(v){return v.replace(/\D/g,"").length>=5;}]);}
+    rules.push(["nombres",function(v){return v.length>=3;}]);
     rules.forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
-    if(!hay){setErr("hayPaciente",true);ok=false;}
+    // Fila 285: «Correo electrónico o teléfono de contacto» → al menos uno.
+    var sinContacto=!val("correo")&&val("telefono").replace(/\D/g,"").length<7;
+    var ec=document.getElementById("e_contacto");if(ec)ec.style.display=sinContacto?"block":"none";
+    if(sinContacto)ok=false;
     return ok;
   }
   var btn=document.getElementById("btn");
