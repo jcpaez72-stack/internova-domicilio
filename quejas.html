@@ -86,7 +86,19 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   var WA=(qs.get("wa")||"593995464059").replace(/\D/g,"");
   // 12-oct (JC, ficha Consultas y sugerencias): el mismo formulario sirve para «Consultas o Sugerencias» con f=consulta.
   // Planilla fila 295: formulario + registro con número. Sin punto de atención ni fecha (son de quejas).
-  var MODO=((qs.get("f")||"").toLowerCase()==="consulta")?"consulta":"queja";
+  // 12-oct (JC, ficha Felicitaciones): también f=felicitacion (planilla filas 297-298).
+  var _f=(qs.get("f")||"").toLowerCase();
+  var MODO=(_f==="consulta"||_f==="felicitacion")?_f:"queja";
+  if(MODO==="felicitacion"){
+    document.title="INTERLAB · Felicitaciones";
+    document.getElementById("tit").textContent="Felicitaciones";
+    document.getElementById("pre").innerHTML="Complete este formulario con su <b>felicitación</b> y la enviaremos al equipo correspondiente.";
+    ["secOcurrido","fldLugar","fldFecha"].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.add("hidden");});
+    document.getElementById("lblDesc").innerHTML="Su felicitación <span class=\"req\">*</span>";
+    var _df=document.getElementById("descripcion");if(_df)_df.placeholder="Escriba aquí su felicitación.";
+    var _edf=document.getElementById("e_descripcion");if(_edf)_edf.textContent="Escriba su felicitación (mínimo 10 caracteres).";
+    var _bf=document.getElementById("btn");if(_bf)_bf.textContent="Enviar mi felicitación →";
+  }
   if(MODO==="consulta"){
     document.title="INTERLAB · Consultas y Sugerencias";
     document.getElementById("tit").textContent="Consultas y Sugerencias";
