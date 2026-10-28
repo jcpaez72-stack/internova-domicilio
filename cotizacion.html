@@ -43,16 +43,16 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <div class="fld"><label>Nombres y apellidos <span class="req">*</span></label><input id="nombres" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombres">Ingrese el nombre.</div></div>
     <div class="fld"><label>Cédula o RUC <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Cédula (10 díg.), RUC (13) o pasaporte"><div class="hint">Si es una clínica o laboratorio remitente con convenio, ingrese el RUC.</div><div class="err" id="e_cedula">Ingrese la cédula o RUC.</div></div>
     <div class="fld"><label>Seguro médico</label><input id="seguro" placeholder="Ej.: Salud S.A., BMI… (deje vacío si no aplica)"><div class="hint">Indíquelo solo si desea cotizar con su seguro médico privado.</div></div>
-    <div class="fld"><label>Exámenes a cotizar <span class="req">*</span></label>
+    <div class="fld"><label>Exámenes a cotizar</label>
       <textarea id="examenes" placeholder="Listado de pruebas (ej.: biometría, glucosa, perfil lipídico)"></textarea>
-      <div class="hint">Comparta la lista. También puede enviar la foto de la orden al asesor en el chat.</div>
-      <div class="err" id="e_examenes">Indique los exámenes.</div></div>
+      <div class="hint">Si prefiere enviar una imagen o un documento de su orden, al cerrar este formulario le llegará un mensaje en el chat para que lo haga ahí.</div>
+      </div>
     <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
     <button class="btn" id="btn" type="button">Enviar y continuar con un asesor →</button>
     <button class="btn" id="btnCancel" type="button" style="background:#fff;color:var(--wa);border:2px solid var(--wa);margin-top:8px">Cancelar y volver al menú</button>
     <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que validará la tarifa y le entregará la cotización.</div>
   </div>
-  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Solicitud enviada!</h2><p style="color:#6b6b6b">Le estamos conectando con un asesor. Vuelva a la conversación de WhatsApp.</p></div>
+  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Solicitud enviada!</h2><p style="color:#6b6b6b">Vuelva a la conversación de WhatsApp para continuar con su solicitud.</p></div>
 </div>
 
 <script>
@@ -90,8 +90,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   }
   function validate(){
     var ok=true;
-    [["nombres",function(v){return v.length>=3;}],["cedula",function(v){return v.length>=5;}],
-     ["examenes",function(v){return v.length>=2;}]
+    [["nombres",function(v){return v.length>=3;}],["cedula",function(v){return v.length>=5;}]
     ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
     return ok;
   }
