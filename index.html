@@ -68,7 +68,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <div class="hint">Si no tiene número, escriba 0.</div></div>
 
     <div class="viv hidden" id="blk_depto">
-      <div class="fld"><label>Edificio</label><input id="edificio" placeholder="Ej.: Torres del Río"></div>
+      <div class="fld"><label>Edificio <span class="req">*</span></label><input id="edificio" placeholder="Ej.: Torres del Río"><div class="err" id="e_edificio">Indique el edificio (si no aplica, escriba 0).</div></div>
       <div class="tres">
         <div class="fld"><label>Piso <span class="req">*</span></label>
           <input id="piso" placeholder="Ej.: 3"><div class="err" id="e_piso">Falta. Si no aplica, escriba 0.</div></div>
@@ -82,7 +82,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <div class="fld"><label>Nombre de la urbanización o conjunto <span class="req">*</span></label>
         <input id="urbNombre" placeholder="Ej.: Villa Club"><div class="err" id="e_urbNombre">Indique el nombre.</div></div>
       <div class="tres">
-        <div class="fld"><label>Etapa</label><input id="urbEtapa" placeholder="Ej.: 3"></div>
+        <div class="fld"><label>Etapa <span class="req">*</span></label><input id="urbEtapa" placeholder="Ej.: 3"><div class="err" id="e_urbEtapa">Falta. Si no aplica, escriba 0.</div></div>
         <div class="fld"><label>Manzana <span class="req">*</span></label><input id="urbManzana" placeholder="Ej.: 14"><div class="err" id="e_urbManzana">Falta. Si no aplica, escriba 0.</div></div>
         <div class="fld"><label>Villa <span class="req">*</span></label><input id="urbVilla" placeholder="Ej.: 7"><div class="err" id="e_urbVilla">Falta. Si no aplica, escriba 0.</div></div>
       </div>
@@ -270,12 +270,12 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
      // asi que el limite real lo pone esta comparacion (las fechas ISO se comparan como texto).
      ["fecha",function(v){return !!v && v>=F_MIN && v<=F_MAX;}]
     ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
-    // Solo se exigen los campos del tipo de vivienda elegido. La etapa queda opcional:
-    // hay urbanizaciones de una sola etapa y exigirla dejaria al paciente sin poder enviar.
+    // Solo se exigen los campos del tipo de vivienda elegido. Desde el 15-nov todos son
+    // obligatorios (tambien edificio y etapa): si un dato no aplica, el paciente escribe 0.
     var v=vivSel(), req=[];
     if(v==="Casa") req=["numCasa"];
-    else if(v==="Departamento") req=["piso","numDepto"];
-    else if(v==="Urbanización o conjunto") req=["urbNombre","urbManzana","urbVilla"];
+    else if(v==="Departamento") req=["edificio","piso","numDepto"];
+    else if(v==="Urbanización o conjunto") req=["urbNombre","urbEtapa","urbManzana","urbVilla"];
     req.forEach(function(id){var bad=!val(id);setErr(id,bad);if(bad)ok=false;});
     if(!segVal){setErr("seguro",true);ok=false;}
     return ok;
