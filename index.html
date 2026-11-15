@@ -7,8 +7,6 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>INTERLAB · Servicio a Domicilio</title>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 :root{--wa:#075e54;--wa2:#128c7e;--ink:#111b21;--sub:#667781;--line:#d1d7db;--field:#fff;--bg:#f0f2f5;
  --amber:#8a5a00;--amberbg:#fff8e6;--amberbd:#ffe08a}
@@ -29,8 +27,6 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 .invalid{border-color:#e11 !important}
 .hint{font-size:11.5px;color:var(--sub);margin-top:4px}
 .err{color:#e11;font-size:12px;margin-top:4px;display:none}
-.mapbtn{width:100%;background:#fff;border:1px solid var(--wa2);color:var(--wa2);border-radius:10px;padding:11px;font-size:14px;font-weight:600;cursor:pointer}
-.coords{font-size:11.5px;color:var(--sub);margin-top:6px}
 .btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;margin-top:10px;cursor:pointer}
 .btn:disabled{opacity:.5}
 .foot{font-size:11px;color:var(--sub);text-align:center;margin-top:14px}
@@ -58,7 +54,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <!-- 12-oct (JC): las mismas 10 opciones del menú del bot (provincia → ciudad o sector).
            Samborondón y Vía Daule o Vía Salitre son sectores de Guayaquil: el formulario devuelve
            ciudad=Guayaquil + sector, para que el asesor de Guayaquil siga recibiéndolos. -->
-      <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Samborondón</option><option>Vía Daule o Vía Salitre</option><option>Milagro</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Quevedo</option></select>
+      <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Samborondón</option><option>Vía Daule o Vía Salitre</option><option>Daule</option><option>Milagro</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Quevedo</option></select>
       <div class="err" id="e_ciudad">Seleccione la ciudad.</div></div>
     <!-- Tipo de vivienda: el asesor necesita el número exacto para llegar. Antes todo iba
          suelto en el texto de la dirección y se perdía (JC, 19-sep). -->
@@ -68,16 +64,18 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <div class="err" id="e_vivienda">Seleccione el tipo de vivienda.</div></div>
 
     <div class="fld viv hidden" id="blk_casa"><label>Número de casa <span class="req">*</span></label>
-      <input id="numCasa" placeholder="Ej.: 12 · Mz. 4 solar 7"><div class="err" id="e_numCasa">Indique el número de casa.</div></div>
+      <input id="numCasa" placeholder="Ej.: 12 · Mz. 4 solar 7"><div class="err" id="e_numCasa">Indique el número de casa (si no tiene, escriba 0).</div>
+      <div class="hint">Si no tiene número, escriba 0.</div></div>
 
     <div class="viv hidden" id="blk_depto">
       <div class="fld"><label>Edificio</label><input id="edificio" placeholder="Ej.: Torres del Río"></div>
       <div class="tres">
         <div class="fld"><label>Piso <span class="req">*</span></label>
-          <input id="piso" placeholder="Ej.: 3"><div class="err" id="e_piso">Falta.</div></div>
+          <input id="piso" placeholder="Ej.: 3"><div class="err" id="e_piso">Falta. Si no aplica, escriba 0.</div></div>
         <div class="fld"><label>N.º de departamento <span class="req">*</span></label>
-          <input id="numDepto" placeholder="Ej.: 4B"><div class="err" id="e_numDepto">Falta.</div></div>
+          <input id="numDepto" placeholder="Ej.: 4B"><div class="err" id="e_numDepto">Falta. Si no aplica, escriba 0.</div></div>
       </div>
+      <div class="hint" style="margin:-6px 0 12px">Si algún dato no aplica, escriba 0.</div>
     </div>
 
     <div class="viv hidden" id="blk_urb">
@@ -85,17 +83,15 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
         <input id="urbNombre" placeholder="Ej.: Villa Club"><div class="err" id="e_urbNombre">Indique el nombre.</div></div>
       <div class="tres">
         <div class="fld"><label>Etapa</label><input id="urbEtapa" placeholder="Ej.: 3"></div>
-        <div class="fld"><label>Manzana <span class="req">*</span></label><input id="urbManzana" placeholder="Ej.: 14"><div class="err" id="e_urbManzana">Falta.</div></div>
-        <div class="fld"><label>Villa <span class="req">*</span></label><input id="urbVilla" placeholder="Ej.: 7"><div class="err" id="e_urbVilla">Falta.</div></div>
+        <div class="fld"><label>Manzana <span class="req">*</span></label><input id="urbManzana" placeholder="Ej.: 14"><div class="err" id="e_urbManzana">Falta. Si no aplica, escriba 0.</div></div>
+        <div class="fld"><label>Villa <span class="req">*</span></label><input id="urbVilla" placeholder="Ej.: 7"><div class="err" id="e_urbVilla">Falta. Si no aplica, escriba 0.</div></div>
       </div>
+      <div class="hint" style="margin:-6px 0 12px">Si algún dato no aplica, escriba 0.</div>
     </div>
 
     <div class="fld"><label>Calle o avenida y referencia <span class="req">*</span></label>
       <textarea id="direccion" placeholder="Calle principal, entre qué calles, y una referencia (ej.: portón blanco, frente a la tienda)"></textarea>
-      <button type="button" class="mapbtn" id="efBtnMapa" style="margin-top:8px">📍 Seleccionar en el mapa</button>
-      <div class="coords" id="coords">Use el mapa para ubicar el punto exacto de la toma.</div>
-      <div class="err" id="e_direccion">Ingrese la dirección.</div>
-      <input type="hidden" id="ef_lat"><input type="hidden" id="ef_lon"></div>
+      <div class="err" id="e_direccion">Ingrese la dirección.</div></div>
     <div class="fld"><label>Teléfono de contacto <span class="req">*</span></label><input id="telefono" inputmode="tel" placeholder="Ej.: 0999123456"><div class="err" id="e_telefono">Ingrese el teléfono.</div></div>
     <div class="fld"><label>Fecha en que requiere el servicio <span class="req">*</span></label><input id="fecha" type="date">
       <div class="err" id="e_fecha">Seleccione una fecha dentro del rango permitido.</div></div>
@@ -108,31 +104,12 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <div class="err" id="e_seguro">Seleccione una opción.</div>
       <div id="segAviso" class="hidden" style="margin-top:8px;background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:10px;padding:10px 12px;font-size:12.5px">Le informamos que para el servicio a domicilio no aplican ODAS ni Copagos.</div>
     </div>
-    <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios y marque su ubicación.</div>
+    <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
     <button class="btn" id="btn" type="button">Enviar y continuar con un asesor →</button>
     <button class="btn" id="btnCancel" type="button" style="background:#fff;color:var(--wa);border:2px solid var(--wa);margin-top:8px">Cancelar y volver al menú</button>
     <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que confirmará la cobertura y coordinará la visita.</div>
   </div>
   <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Solicitud enviada!</h2><p style="color:#6b6b6b">Le estamos conectando con un asesor. Vuelva a la conversación de WhatsApp.</p></div>
-</div>
-
-<!-- Modal de mapa (base EnvíaFácil: Google geocode + buscador) -->
-<div id="efMapModal" class="hidden" style="position:fixed;inset:0;z-index:99999;background:#fff;display:flex;flex-direction:column">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:.5px solid #e4e4e4">
-    <span style="font-size:16px;font-weight:600">Seleccionar ubicación</span>
-    <span id="efMapClose" style="font-size:24px;color:#8a8a8a;cursor:pointer;line-height:1">&times;</span>
-  </div>
-  <div style="position:relative;flex:1;min-height:200px">
-    <div id="efLeaf" style="position:absolute;inset:0"></div>
-    <div style="position:absolute;left:50%;top:50%;transform:translate(-50%,-100%);pointer-events:none;font-size:38px;z-index:500">📍</div>
-    <button type="button" id="efMiUbic" style="position:absolute;right:14px;bottom:20px;width:46px;height:46px;border-radius:50%;background:#fff;border:.5px solid #ddd;font-size:20px;z-index:500;cursor:pointer">🎯</button>
-    <!-- 12-oct (JC, O2 B): sin buscador. El autocompletar era Google y el OSM público no lo permite. Queda el pin + 🎯. -->
-  </div>
-  <div style="padding:14px 16px;border-top:.5px solid #e4e4e4">
-    <div id="efCov" style="font-size:12px;margin-bottom:6px;color:#888">Mueve el mapa para ubicar el pin</div>
-    <div id="efAddr" style="font-size:14px;font-weight:600;margin-bottom:12px;min-height:20px;color:#0f0f0f"></div>
-    <button type="button" id="efMapConfirm" style="width:100%;height:48px;border-radius:24px;background:var(--wa);border:none;color:#fff;font-weight:700;font-size:15px;cursor:pointer">Confirmar ubicación</button>
-  </div>
 </div>
 
 <script>
@@ -150,7 +127,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   var CIUDAD_CHAT=(qs.get("c")||"").trim();
   // 12-oct (JC): el sector llega como código corto ("s"), porque el bot no garantiza cómo
   // codifica espacios y tildes en la URL. Si viene, se marca el sector en vez de «Guayaquil».
-  var SECTOR_COD={sam:"Samborondón",vds:"Vía Daule o Vía Salitre"};
+  var SECTOR_COD={sam:"Samborondón",vds:"Vía Daule o Vía Salitre",dau:"Daule"};
   var SECTOR_CHAT=SECTOR_COD[(qs.get("s")||"").trim().toLowerCase()]||"";
   if(SECTOR_CHAT&&CIUDAD_CHAT.toLowerCase()==="guayaquil")CIUDAD_CHAT=SECTOR_CHAT;
   window._ciudadFija=false;
@@ -172,7 +149,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
   function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
-  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",sector:"Sector",vivienda:"Tipo de vivienda",direccion:"Dirección",lat:"Latitud",lon:"Longitud",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",sector:"Sector",vivienda:"Tipo de vivienda",direccion:"Dirección",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
   // Candado SERVER-SIDE (internova-formlock): bloquea en cualquier dispositivo
   var IN_FLURL="https://internova-formlock.fn.jelou.ai";
@@ -216,18 +193,22 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   });
   pintarVivienda();
 
+  // 15-nov: en los campos de vivienda, «0» (o solo ceros) significa «no aplica»:
+  // ese dato no se escribe en la direccion. Casa sin numero o departamento sin datos -> «s/n».
+  function aplica(x){x=String(x||"").trim();return !!x && !/^0+$/.test(x);}
   function domicilioTxt(){
     var v=vivSel(), p=[];
-    if(v==="Casa"){ if(val("numCasa")) p.push("Casa "+val("numCasa")); }
+    if(v==="Casa"){ p.push("Casa "+(aplica(val("numCasa"))?val("numCasa"):"s/n")); }
     else if(v==="Departamento"){
-      if(val("edificio")) p.push("Edificio "+val("edificio"));
-      if(val("piso")) p.push("piso "+val("piso"));
-      if(val("numDepto")) p.push("departamento "+val("numDepto"));
+      if(aplica(val("edificio"))) p.push("Edificio "+val("edificio"));
+      if(aplica(val("piso"))) p.push("piso "+val("piso"));
+      if(aplica(val("numDepto"))) p.push("departamento "+val("numDepto"));
+      if(!p.length) p.push("Departamento s/n");
     } else if(v==="Urbanización o conjunto"){
       if(val("urbNombre")) p.push("Urb. "+val("urbNombre"));
-      if(val("urbEtapa")) p.push("etapa "+val("urbEtapa"));
-      if(val("urbManzana")) p.push("Mz. "+val("urbManzana"));
-      if(val("urbVilla")) p.push("villa "+val("urbVilla"));
+      if(aplica(val("urbEtapa"))) p.push("etapa "+val("urbEtapa"));
+      if(aplica(val("urbManzana"))) p.push("Mz. "+val("urbManzana"));
+      if(aplica(val("urbVilla"))) p.push("villa "+val("urbVilla"));
     }
     var cabeza=p.join(", ");
     var calle=val("direccion");
@@ -235,16 +216,15 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   }
 
   // 12-oct: los sectores se devuelven como ciudad=Guayaquil + sector (el bot enruta por ciudad).
-  var SECTORES_GYE={"Samborondón":1,"Vía Daule o Vía Salitre":1};
+  var SECTORES_GYE={"Samborondón":1,"Vía Daule o Vía Salitre":1,"Daule":1};
   function payloadDatos(){
-    var la=val("ef_lat"),lo=val("ef_lon"),cs=val("ciudad"),esSec=!!SECTORES_GYE[cs];
+    var cs=val("ciudad"),esSec=!!SECTORES_GYE[cs];
     return {paciente:val("nombre"),cedula:val("cedula"),ciudad:esSec?"Guayaquil":cs,sector:esSec?cs:"",
       direccion:domicilioTxt(),
       vivienda:vivSel(),numCasa:val("numCasa"),edificio:val("edificio"),piso:val("piso"),numDepto:val("numDepto"),
       urbNombre:val("urbNombre"),urbEtapa:val("urbEtapa"),urbManzana:val("urbManzana"),urbVilla:val("urbVilla"),
       calle:val("direccion"),
-      telefono:val("telefono"),fecha:val("fecha"),seguro:segVal,
-      lat:la,lon:lo,maps:(la&&lo)?("https://maps.google.com/?q="+la+","+lo):""};
+      telefono:val("telefono"),fecha:val("fecha"),seguro:segVal};
   }
   // ---- Ventana de agendamiento: del dia siguiente hasta 3 dias despues ----
   // Regla de InterLAB (JC, 19-sep): «solo se puede agendar 3 dias posteriores como maximo».
@@ -359,85 +339,5 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 })();
 </script>
 
-<script>
-(function(){
-  var modal=document.getElementById('efMapModal'),map=null,geoT=null,srchT=null;
-  var FN='https://enviafacil-geocode.fn.jelou.ai';
-  // 12-oct (JC, O1): pin → dirección con OpenStreetMap. Si OSM falla (o el CSP del sitio aún no lo permite),
-  // se usa la función de Google como antes, para que el cliente nunca se quede sin dirección.
-  var FN_OSM='https://enviafacil-geocode-osm.fn.jelou.ai';
-  function geoRev(lat,lon){
-    var cuerpo={method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({lat:lat,lon:lon})};
-    function google(){return fetch(FN,cuerpo).then(function(r){return r.json();});}
-    return fetch(FN_OSM,cuerpo).then(function(r){return r.json();}).then(function(d){return (d&&d.ok)?d:google();},google);
-  }
-  var DEF=[-2.170998,-79.922359]; // Guayaquil (la geolocalización lo recentra)
-  // 12-oct (JC): el mapa abre en la sede principal de la ciudad elegida, no siempre en Guayaquil.
-  // Coordenadas de los enlaces de mapa de las sedes de InterLAB (herramienta horariossucursal).
-  // Vía Daule o Vía Salitre: sin enlace confiable → Matriz de Guayaquil (decisión JC, P1 A).
-  var CENTRO={"guayaquil":[-2.1633338,-79.8970287],"vía daule o vía salitre":[-2.1633338,-79.8970287],
-    "samborondón":[-2.0733813,-79.8357459],"milagro":[-2.1299163,-79.5896268],"quito":[-0.1685089,-78.4796297],
-    "cuenca":[-2.9047982,-79.0087576],"portoviejo":[-1.0471313,-80.4824491],"manta":[-0.9536488,-80.7410513],
-    "machala":[-3.2638975,-79.9447674],"quevedo":[-1.0381657,-79.477164]};
-  function centroCiudad(){var s=document.getElementById('ciudad');var v=s?(s.value||'').toLowerCase():'';return CENTRO[v]||DEF;}
-  function newSess(){return 'iv-'+Date.now()+'-'+Math.floor(Math.random()*1e6);}
-  var sess=newSess();
-  function setV(id,v){var el=document.getElementById(id);if(el&&v)el.value=v;}
-  function openM(){
-    modal.classList.remove('hidden');
-    if(!map){
-      map=L.map('efLeaf',{zoomControl:false}).setView(centroCiudad(),15);L.control.zoom({position:'topright'}).addTo(map);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
-      map.on('moveend',onMove);
-      tryLoc();
-    }
-    setTimeout(function(){map.invalidateSize();onMove();},250);
-  }
-  function closeM(){modal.classList.add('hidden');}
-  function onMove(){
-    var sg=document.getElementById('efSug');if(sg)sg.style.display='none';
-    var c=map.getCenter();
-    document.getElementById('efAddr').textContent='Ubicando…';
-    document.getElementById('efCov').textContent='';
-    clearTimeout(geoT);geoT=setTimeout(function(){revGeo(c.lat,c.lng);},450);
-  }
-  function revGeo(lat,lon){
-    geoRev(lat,lon).then(function(d){
-      var a=document.getElementById('efAddr'),cov=document.getElementById('efCov');
-      if(d&&d.ok){
-        window._geo={lat:lat,lon:lon,calle:d.calle||'',sector:d.sector||'',ciudad:d.ciudad||'',fmt:d.formatted||''};
-        a.textContent=d.formatted||((d.calle||'')+', '+(d.ciudad||''));
-        if(d.ciudad){cov.textContent='✅ '+d.ciudad+(d.provincia?', '+d.provincia:'');cov.style.color='#0f6e56';}
-        else{cov.textContent='';}
-      }else{a.textContent='No pudimos leer la dirección aquí';window._geo=null;}
-    }).catch(function(){document.getElementById('efAddr').textContent='Sin conexión al ubicar';});
-  }
-  function tryLoc(){
-    if(!navigator.geolocation)return;
-    navigator.geolocation.getCurrentPosition(function(p){if(map)map.setView([p.coords.latitude,p.coords.longitude],16);},function(){},{timeout:6000,enableHighAccuracy:true});
-  }
-  function confirmLoc(){
-    if(!map){closeM();return;}
-    var c=map.getCenter(),btn=document.getElementById('efMapConfirm');
-    btn.textContent='Confirmando…';btn.disabled=true;
-    function done(d){
-      setV('ef_lat',String(c.lat));setV('ef_lon',String(c.lng));
-      var cel=document.getElementById('coords');if(cel)cel.textContent='📍 Ubicación marcada: '+(+c.lat).toFixed(6)+', '+(+c.lng).toFixed(6);
-      if(d&&d.ok){
-        var dir=[d.calle,d.sector].filter(Boolean).join(', ');
-        if(!dir&&d.formatted)dir=String(d.formatted).split(',').slice(0,2).join(',');
-        var t=document.getElementById('direccion');if(t&&dir&&!t.value.trim())t.value=dir;
-        if(d.ciudad&&!window._ciudadFija){var sel=document.getElementById('ciudad');for(var i=0;i<sel.options.length;i++){var v=(sel.options[i].value||sel.options[i].text||'').toLowerCase();if(v&&(d.ciudad.toLowerCase().indexOf(v)>=0||v.indexOf(d.ciudad.toLowerCase())>=0)){sel.selectedIndex=i;break;}}}
-      }
-      btn.textContent='Confirmar ubicación';btn.disabled=false;closeM();
-    }
-    geoRev(c.lat,c.lng).then(done).catch(function(){done(null);});
-  }
-  document.getElementById('efBtnMapa').addEventListener('click',openM);
-  document.getElementById('efMapClose').addEventListener('click',closeM);
-  document.getElementById('efMapConfirm').addEventListener('click',confirmLoc);
-  document.getElementById('efMiUbic').addEventListener('click',tryLoc);
-})();
-</script>
 </body>
 </html>
