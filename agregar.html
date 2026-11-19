@@ -37,9 +37,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 <div class="wrap">
   <div class="head"><div class="av">🧪</div><div><h1>Agregar pruebas · Laboratorio Remitente</h1><p>INTERLAB · Laboratorio Clínico</p></div></div>
   <div class="body" id="scr_datos">
-    <!-- 13-oct (JC, ficha Agregar pruebas): los 7 datos de la planilla del 1-oct, fila 474. -->
+    <!-- 13-oct (JC, ficha Agregar pruebas): datos de la planilla del 1-oct, fila 474. 18-nov: los exámenes se piden en el chat, después de enviar. -->
     <div class="pre">
-      Complete los datos de la orden y los exámenes que desea agregar. Primero verificaremos que aún contemos con la muestra necesaria para procesarlos.
+      Complete los datos de la orden. Primero verificaremos que aún contemos con la muestra necesaria para procesarlos.
     </div>
     <div class="fld"><label>Número de convenio o laboratorio <span class="req">*</span></label><input id="numeroLab" placeholder="Ej.: LAB-0123 / N.º de convenio"><div class="err" id="e_numeroLab">Complete este campo.</div></div>
     <div class="fld"><label>Número de orden <span class="req">*</span></label><input id="orden" placeholder="Número de la orden del paciente"><div class="err" id="e_orden">Complete este campo.</div></div>
@@ -47,14 +47,15 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     <div class="fld"><label>Fecha en que se entregó la muestra <span class="req">*</span></label><input id="fechaMuestra" type="date"><div class="err" id="e_fechaMuestra">Complete este campo.</div></div>
     <div class="fld"><label>Nombre y apellido de la persona que solicita el aumento de prueba <span class="req">*</span></label><input id="solicitante" placeholder="Nombre y apellido"><div class="err" id="e_solicitante">Complete este campo.</div></div>
     <div class="fld"><label>Correo que tiene registrado con nosotros <span class="req">*</span></label><input id="correo" inputmode="email" placeholder="nombre@dominio.com"><div class="err" id="e_correo">Revise el correo (ej.: nombre@dominio.com).</div></div>
-    <div class="fld"><label>Examen(es) que quiere agregar <span class="req">*</span></label>
-      <textarea id="examenes" placeholder="Ej.: TSH, vitamina D"></textarea>
-      <div class="err" id="e_examenes">Indique los exámenes que desea agregar.</div></div>
+    <div class="pre" style="margin-top:14px">
+      Al enviar este formulario le llegará un mensaje en el chat para que nos indique los exámenes que desea agregar, con una foto, un documento o un texto.
+    </div>
     <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
     <button class="btn" id="btn" type="button">Enviar y continuar con un asesor →</button>
+    <button class="btn" id="btnCancel" type="button" style="background:#fff;color:var(--wa);border:2px solid var(--wa);margin-top:8px">Cancelar y volver al menú</button>
     <div class="foot">Al enviar, sus datos pasan a un asesor de INTERLAB, que verificará la muestra y coordinará el aumento de pruebas.</div>
   </div>
-  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Datos enviados!</h2><p style="color:#6b6b6b">Le estamos conectando con un asesor. Vuelva a la conversación de WhatsApp.</p></div>
+  <div id="ok"><div style="font-size:52px">✅</div><h2 style="margin:10px 0 4px">¡Datos enviados!</h2><p style="color:#6b6b6b">Vuelva a la conversación de WhatsApp para continuar con su solicitud.</p></div>
 </div>
 
 <script>
@@ -76,7 +77,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
   function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
-  function showLocked(){var d=lockedRec()||{};var rows="";var L={numeroLab:"N.º convenio/laboratorio",orden:"N.º de orden",paciente:"Paciente",fechaMuestra:"Fecha de la muestra",solicitante:"Solicita",correo:"Correo",examenes:"Exámenes a agregar"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta informacion ya fue enviada y no se puede modificar aqui.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={numeroLab:"N.º convenio/laboratorio",orden:"N.º de orden",paciente:"Paciente",fechaMuestra:"Fecha de la muestra",solicitante:"Solicita",correo:"Correo"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta informacion ya fue enviada y no se puede modificar aqui.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
   // Candado de servidor: mismo bloque que quejas, cotización, test dinámico, domicilios y facturación.
   // Candado SERVER-SIDE (internova-formlock)
@@ -90,13 +91,13 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function setErr(id,bad){var el=document.getElementById(id);if(el)el.classList.toggle("invalid",bad);var e=document.getElementById("e_"+id);if(e)e.style.display=bad?"block":"none";}
   function payloadDatos(){
     return {numeroLab:val("numeroLab"),orden:val("orden"),paciente:val("paciente"),fechaMuestra:val("fechaMuestra"),
-            solicitante:val("solicitante"),correo:val("correo"),examenes:val("examenes")};
+            solicitante:val("solicitante"),correo:val("correo")};
   }
   function validate(){
     var ok=true;
     [["numeroLab",function(v){return v.length>=1;}],["orden",function(v){return v.length>=1;}],["paciente",function(v){return v.length>=3;}],
      ["fechaMuestra",function(v){return v.length>0;}],["solicitante",function(v){return v.length>=3;}],
-     ["correo",function(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}],["examenes",function(v){return v.length>=2;}]
+     ["correo",function(v){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);}]
     ].forEach(function(p){var bad=!p[1](val(p[0]));setErr(p[0],bad);if(bad)ok=false;});
     return ok;
   }
@@ -142,6 +143,19 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       }
       g.style.display="block";window.scrollTo(0,0);
     }
+  });
+
+  /* Botón Cancelar: mismo callback, payload distinguible {cancelado:true} (sin datos del form).
+     Webview sigue BLOQUEANTE; el flujo rutea al menú al ver cancelado=true. */
+  var btnCancel=document.getElementById("btnCancel");
+  if(btnCancel) btnCancel.addEventListener("click",async function(){
+    btnCancel.disabled=true;btnCancel.textContent="Saliendo…";
+    try{
+      await fetch(callback,{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({executionId:executionId,success:true,cancelado:true})});
+    }catch(e){}
+    if(WA){ location.href="https://wa.me/"+WA; }
+    else { btnCancel.disabled=false; btnCancel.textContent="Cancelar y volver al menú"; }
   });
 })();
 </script>

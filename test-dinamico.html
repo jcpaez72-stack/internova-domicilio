@@ -28,7 +28,6 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
 .horario{background:#eef7f4;border:1px solid #b9ded4;border-radius:10px;padding:11px 13px;margin-bottom:15px;font-size:13px;color:#0b4f42}
 .horario span{display:block}
 .horario .horario_tit{font-weight:700;margin-bottom:3px}
-.horario .horario_pie{font-size:11.5px;color:#3f7d70;margin-top:4px}
 .err{color:#e11;font-size:12px;margin-top:4px;display:none}
 .btn{width:100%;background:var(--wa);color:#fff;border:0;border-radius:12px;padding:15px;font-size:16px;font-weight:700;margin-top:10px;cursor:pointer}
 .btn:disabled{opacity:.5}
@@ -54,8 +53,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
          Antes había un campo de hora libre y se podían pedir citas fuera de horario (JC, 19-sep). -->
     <div class="horario" id="horario">
       <span class="horario_tit">Horario de atención</span>
-      <span id="horario_txt">Los test dinámicos se realizan de <b>07h00 a 12h00</b>.</span>
-      <span class="horario_pie">Un asesor coordinará con usted la hora exacta dentro de ese horario.</span>
+      <span id="horario_txt">Cada sede tiene su horario. Un asesor coordinará con usted la hora de su cita.</span>
     </div>
     <div class="fld"><label>¿Está tomando alguna medicación? ¿Cuál? <span class="req">*</span></label><input id="medicacion" placeholder="Indique el medicamento, o escriba «Ninguna»"><div class="hint">Importante para la seguridad del procedimiento.</div><div class="err" id="e_medicacion">Indique la medicación o escriba «Ninguna».</div></div>
     <div class="fld"><label>¿Presenta fiebre o gripe actualmente? <span class="req">*</span></label>
@@ -70,6 +68,9 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       <div class="fld"><label>¿Ha sufrido convulsiones alguna vez? <span class="req">*</span></label>
         <select id="convul"><option value="">Seleccione…</option><option>No</option><option>Sí</option></select>
         <div class="err" id="e_convul">Seleccione una opción.</div></div>
+    </div>
+    <div class="pre" style="margin-top:14px">
+      Al enviar este formulario le llegará un mensaje en el chat para que comparta la imagen o el documento de su orden médica, si la tiene.
     </div>
     <div class="err" id="e_global" style="text-align:center">Complete los campos obligatorios.</div>
     <button class="btn" id="btn" type="button">Enviar solicitud de agendamiento →</button>
@@ -93,15 +94,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   // deduce del nombre del test (t=..._insu) para no perder el tamizaje por un dato faltante.
   var ES_INSULINA=(qs.get("ins")==="1")||/_insu$/.test(qs.get("t")||"");
   if(ES_INSULINA){var _b=document.getElementById("blk_ins");if(_b)_b.style.display="block";}
-  // ---- Horario: 07h00 a 12h00 en general; el test de Sudor llega hasta las 15h00 ----
-  // El bot manda t=gye_sudor cuando el paciente eligió el test de Sudor (es el único, y solo
-  // existe en Guayaquil). Si el parámetro no llega, se muestra el horario general, que es el
-  // más restrictivo: nunca prometemos una hora que el laboratorio no atiende.
-  var ES_SUDOR=/(^|_)sudor$/.test(qs.get("t")||"");
-  if(ES_SUDOR){
-    var _h=document.getElementById("horario_txt");
-    if(_h)_h.innerHTML="El <b>test de Sudor</b> se realiza de <b>07h00 a 15h00</b>.";
-  }
+  // 13-nov: el recuadro ya no muestra horas; cada sede tiene su horario y el asesor coordina la hora.
   // ---- Bloqueo / solo-lectura: una vez enviado, TODA reapertura sale solo-lectura ----
   // Anclado al número del cliente ({{$user.id}} = param "u") para que funcione en el bot Y en el
   // chat del asesor. Una solicitud NUEVA (executionId distinto) vuelve a quedar editable.
