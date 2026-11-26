@@ -50,12 +50,13 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
      retira en vez de dejarla vacia. -->
     <div class="fld"><label>Nombres y apellidos del paciente <span class="req">*</span></label><input id="nombre" placeholder="Ej.: Juan Carlos Pérez"><div class="err" id="e_nombre">Ingrese el nombre.</div></div>
     <div class="fld"><label>Cédula o pasaporte <span class="req">*</span></label><input id="cedula" inputmode="numeric" placeholder="Ej.: 0912345678"><div class="err" id="e_cedula">Ingrese la cédula o pasaporte.</div></div>
-    <div class="fld"><label>Ciudad <span class="req">*</span></label>
+    <div class="fld"><label id="lblCiudad">Ciudad <span class="req">*</span></label>
       <!-- 12-oct (JC): las mismas 10 opciones del menú del bot (provincia → ciudad o sector).
            Samborondón y Vía Daule o Vía Salitre son sectores de Guayaquil: el formulario devuelve
            ciudad=Guayaquil + sector, para que el asesor de Guayaquil siga recibiéndolos. -->
       <select id="ciudad"><option value="">Seleccione…</option><option>Guayaquil</option><option>Samborondón</option><option>Vía Daule o Vía Salitre</option><option>Daule</option><option>Milagro</option><option>Quito</option><option>Cuenca</option><option>Portoviejo</option><option>Manta</option><option>Machala</option><option>Quevedo</option></select>
-      <div class="err" id="e_ciudad">Seleccione la ciudad.</div></div>
+      <div class="err" id="e_ciudad">Seleccione la ciudad.</div>
+      <div id="durAviso" class="hidden" style="margin-top:8px;background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:10px;padding:10px 12px;font-size:12.5px;line-height:1.45">Lo sentimos, por el momento nuestro servicio a domicilio no tiene cobertura en Durán.<br><br>Pero puede acercarse a nuestros puntos de atención de Durán:<br>• Durán Business Center: Km 3.5 Vía Durán-Tambo, C.C. Durán Business Center &amp; Logistics, local 17.<br>• Durán Centro: Atahualpa #204 y Venezuela (a una cuadra del Municipio de Durán).<br><br>Para otra gestión, toque <b>Cancelar y volver al menú</b>.</div></div>
     <!-- Tipo de vivienda: el asesor necesita el número exacto para llegar. Antes todo iba
          suelto en el texto de la dirección y se perdía (JC, 19-sep). -->
     <div class="fld"><label>Tipo de vivienda <span class="req">*</span></label>
@@ -102,6 +103,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
         <button type="button" id="seg_no" style="flex:1;background:#fff;border:1px solid var(--line);color:var(--ink);border-radius:10px;padding:11px;font:inherit;font-size:15px;font-weight:600;cursor:pointer">No</button>
       </div>
       <div class="err" id="e_seguro">Seleccione una opción.</div>
+      <!-- 26-nov (Jefferson; JC: «sí, texto libre», obligatorio): nombre del seguro, solo si marca «Sí». El asesor lo necesita para cotizar con la tarifa correspondiente. -->
+      <div id="segNombreWrap" class="hidden" style="margin-top:10px"><label>¿Qué seguro médico va a aplicar? <span class="req">*</span></label><input id="seguroNombre" placeholder="Ej.: Salud S.A., BMI…"><div class="err" id="e_seguroNombre">Indique el nombre del seguro.</div></div>
       <div id="segAviso" class="hidden" style="margin-top:8px;background:var(--amberbg);border:1px solid var(--amberbd);color:var(--amber);border-radius:10px;padding:10px 12px;font-size:12.5px">Le informamos que para el servicio a domicilio no aplican ODAS ni Copagos.</div>
     </div>
     <div class="pre" style="margin-top:14px">
@@ -134,7 +137,20 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   var SECTOR_CHAT=SECTOR_COD[(qs.get("s")||"").trim().toLowerCase()]||"";
   if(SECTOR_CHAT&&CIUDAD_CHAT.toLowerCase()==="guayaquil")CIUDAD_CHAT=SECTOR_CHAT;
   window._ciudadFija=false;
-  if(CIUDAD_CHAT){
+  // 26-nov (Jefferson; JC: «aprobado»): si la ciudad es Guayaquil y el chat no trae sector, el sector se
+  // elige AQUI (las mismas 5 opciones de la lista que antes salia en el chat). Duran: aviso de sin cobertura
+  // (mismo texto del bot) y no se puede enviar. Quien escribio su sector en el chat sigue llegando con el sector fijo.
+  var MODO_SECTOR=(CIUDAD_CHAT.toLowerCase()==="guayaquil"&&!SECTOR_CHAT);
+  if(MODO_SECTOR){
+    var _ss=document.getElementById("ciudad");
+    _ss.innerHTML='<option value="">Seleccione…</option><option>Guayaquil</option><option>Samborondón</option><option>Vía Daule o Vía Salitre</option><option>Daule</option><option>Durán</option>';
+    document.getElementById("lblCiudad").innerHTML='Sector de Guayaquil <span class="req">*</span>';
+    document.getElementById("e_ciudad").textContent="Seleccione el sector.";
+    _ss.addEventListener("change",function(){var d=(_ss.value==="Durán");
+      document.getElementById("durAviso").classList.toggle("hidden",!d);
+      var b=document.getElementById("btn");b.disabled=d;});
+  }
+  if(CIUDAD_CHAT&&!MODO_SECTOR){
     var _sel=document.getElementById("ciudad");
     if(_sel){for(var _i=0;_i<_sel.options.length;_i++){
       var _t=(_sel.options[_i].value||_sel.options[_i].text||"").toLowerCase();
@@ -152,7 +168,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
   function lockedRec(){if(!LOCK)return null;try{return JSON.parse(localStorage.getItem(LOCK)||"null");}catch(e){return null;}}
   function isLocked(){var r=lockedRec();if(!r)return false;if(!executionId)return true;if(!r.executionId)return true;return r.executionId===executionId;}
   function lock(d){if(!LOCK)return;try{localStorage.setItem(LOCK,JSON.stringify(Object.assign({executionId:executionId},d||{})));}catch(e){}}
-  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",sector:"Sector",vivienda:"Tipo de vivienda",direccion:"Dirección",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
+  function showLocked(){var d=lockedRec()||{};var rows="";var L={paciente:"Paciente",cedula:"Cédula/Pasaporte",ciudad:"Ciudad",sector:"Sector",vivienda:"Tipo de vivienda",direccion:"Dirección",telefono:"Teléfono",examenes:"Exámenes",seguro:"Seguro médico",seguroNombre:"Nombre del seguro",fecha:"Fecha"};for(var k in L){if(!d[k])continue;rows+='<div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #eee"><span style="color:#8a8a8a">'+L[k]+'</span><b style="text-align:right;max-width:60%">'+String(d[k]).replace(/</g,"&lt;")+'</b></div>';}document.body.innerHTML='<div style="max-width:440px;margin:0 auto;padding:40px 22px;text-align:center;font-family:-apple-system,Arial"><div style="font-size:50px">✅</div><h2 style="margin:8px 0 4px">Solicitud registrada</h2><p style="color:#6b6b6b;margin:0 0 16px">Esta información ya fue enviada y no se puede modificar aquí.</p><div style="text-align:left;background:#fafafa;border:1px solid #eee;border-radius:12px;padding:12px 16px">'+rows+'</div><a href="https://wa.me/'+WA+'" style="display:inline-block;margin-top:16px;background:#075e54;color:#fff;font-weight:700;padding:12px 26px;border-radius:26px;text-decoration:none">Volver a WhatsApp</a></div>';}
   if(isLocked()){showLocked();return;}
   // Candado SERVER-SIDE (internova-formlock): bloquea en cualquier dispositivo
   var IN_FLURL="https://internova-formlock.fn.jelou.ai";
@@ -168,7 +184,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     var si=document.getElementById("seg_si"),no=document.getElementById("seg_no");
     si.style.background=v==="Si"?"var(--wa)":"#fff";si.style.color=v==="Si"?"#fff":"var(--ink)";si.style.borderColor=v==="Si"?"var(--wa)":"var(--line)";
     no.style.background=v==="No"?"var(--wa)":"#fff";no.style.color=v==="No"?"#fff":"var(--ink)";no.style.borderColor=v==="No"?"var(--wa)":"var(--line)";
-    document.getElementById("segAviso").classList.toggle("hidden",v!=="Si");
+    document.getElementById("segAviso").classList.toggle("hidden",v!=="Si");document.getElementById("segNombreWrap").classList.toggle("hidden",v!=="Si");
     setErr("seguro",false);
   }
   document.getElementById("seg_si").addEventListener("click",function(){segPick("Si");});
@@ -227,7 +243,7 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
       vivienda:vivSel(),numCasa:val("numCasa"),edificio:val("edificio"),piso:val("piso"),numDepto:val("numDepto"),
       urbNombre:val("urbNombre"),urbEtapa:val("urbEtapa"),urbManzana:val("urbManzana"),urbVilla:val("urbVilla"),
       calle:val("direccion"),
-      telefono:val("telefono"),fecha:val("fecha"),seguro:segVal};
+      telefono:val("telefono"),fecha:val("fecha"),seguro:segVal,seguroNombre:(segVal==="Si"?val("seguroNombre"):"")};
   }
   // ---- Ventana de agendamiento: del MISMO dia hasta 3 dias despues ----
   // Regla de InterLAB (JC, 19-sep): «solo se puede agendar 3 dias posteriores como maximo».
@@ -282,6 +298,8 @@ body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Ari
     else if(v==="Urbanización o conjunto") req=["urbNombre","urbEtapa","urbManzana","urbVilla"];
     req.forEach(function(id){var bad=!val(id);setErr(id,bad);if(bad)ok=false;});
     if(!segVal){setErr("seguro",true);ok=false;}
+    if(segVal==="Si"){var _sn=val("seguroNombre").length<2;setErr("seguroNombre",_sn);if(_sn)ok=false;}
+    if(val("ciudad")==="Durán")ok=false;
     return ok;
   }
   var btn=document.getElementById("btn");
